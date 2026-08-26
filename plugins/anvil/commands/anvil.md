@@ -3,7 +3,7 @@ description: Run a large piece of work end to end — interview, plan, execute i
 argument-hint: [what you want built] (or leave empty to resume an in-progress plan)
 ---
 
-One command, seven phases, one conversation. It interviews you, writes a plan into the repo,
+One command, eight phases, one conversation. It interviews you, writes a plan into the repo,
 executes it through subagents wave by wave, commits each task separately, and loops the review
 until it comes back clean.
 
@@ -230,14 +230,20 @@ For each wave:
 
 ## Phase 6 — Review loop
 
-Set `status: reviewing`. Then loop, at most **3 rounds**:
+Set `status: reviewing`. Then loop, at most **3 fixing rounds**:
 
 1. Run the `code-review` skill over the range `<first task commit>..HEAD`.
 2. Fix every finding you are confident in. Commit as `plan(<slug>): review fixes round <N>`.
 3. Re-run the plan's `verify:` commands.
 4. If the review came back with nothing, stop the loop.
 
-After 3 rounds, stop regardless. **State plainly what is still unresolved** — a capped loop that
+Then run **one closing pass that fixes nothing**, over the last fixing round's own diff. Each
+round's fixes are themselves unreviewed code, and the last round's never get a turn — without
+this pass the loop ships exactly the changes nobody checked. If the closing pass finds something,
+**report it, do not fix it**: a fix here would need its own review, and the cap exists to stop
+that regress. Note it as a follow-up instead.
+
+After that, stop regardless. **State plainly what is still unresolved** — a capped loop that
 reports "clean" when it is not is worse than no loop at all. List each surviving finding and why
 it was not fixed.
 

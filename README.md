@@ -47,8 +47,10 @@ plan whose tree is dirty. Everywhere else it runs without checking in.
 - **Parallel waves.** One `executor` subagent per task, all dispatched together. Executors are
   forbidden from running git commands — concurrent ones would race on `.git/index.lock` — so the
   main loop commits each task sequentially instead. You keep `git revert <sha>` per task.
-- **Review loop, capped at 3 rounds.** It runs until the review comes back clean, then says
-  plainly what is still unresolved rather than declaring victory at the cap.
+- **Review loop, capped at 3 fixing rounds**, then one closing pass that reports rather than
+  fixes — otherwise the last round's own fixes ship unreviewed. The loop stops early once a
+  review comes back clean, and at the cap it says plainly what is still unresolved rather than
+  declaring victory.
 - **Resumable.** Run `/anvil` with no arguments after a session ends: it reads the per-task state
   out of the plan file and picks up at the first unstarted task. A dirty tree is expected after a
   mid-wave failure, so resume asks what to do rather than refusing to run.

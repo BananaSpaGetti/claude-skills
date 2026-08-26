@@ -72,7 +72,7 @@ by itself authorization to publish it.
 
 ## `plugins/engineering-kit/` is vendored third-party code
 
-Its six skills are taken from Matt Pocock's `skills` repository under MIT, not authored
+Its nine skills are taken from Matt Pocock's `skills` repository under MIT, not authored
 here. Provenance, what was taken, and what was changed are recorded in
 `plugins/engineering-kit/NOTICE`. If you edit the body of any skill under
 `plugins/engineering-kit/skills/`, update `NOTICE` in the same change so it stays an

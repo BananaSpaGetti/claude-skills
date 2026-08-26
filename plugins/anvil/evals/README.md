@@ -27,10 +27,12 @@ either. The prose layout needs almost no schema guessed.
 
 ## What is unverified
 
-- Whether `prompt.md`'s `Setup` section is how this runner actually provisions fixture state.
-  `--help` does not document a fixture mechanism for the `prompt.md` layout; the section is
-  written as a specification for whoever wires up the sandbox, not a config format this suite
-  invents.
+- Where a `prompt.md`-layout case declares its fixture setup. `--help` does document the
+  mechanism — `--scaffold` runs "each case's `scaffold_script`", phrased per-case rather than
+  scoped to `case.yaml` — but not where that script is declared for a case with no `case.yaml`.
+  So `prompt.md`'s `Setup` section stays prose: a specification for whoever wires up the
+  sandbox, not a config format this suite invents. `--scaffold` is off by default and runs
+  author-supplied bash as the invoking user.
 - Whether the graders' plain-prose format is what the runner expects, versus some frontmatter
   this suite does not use. `--help` confirms exactly one example grader key, `tool_used: Skill`;
   this suite does not invent others it cannot justify from that text, and falls back to prose

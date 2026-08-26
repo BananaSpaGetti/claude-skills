@@ -15,9 +15,12 @@ The working directory for this case must be a real git repository, not merely de
 - No merge or rebase in progress — this case is the plain dirty-tree path, not the
   `resolving-merge-conflicts` path in the Resume section.
 
-`claude plugin eval --help` does not document how a `prompt.md`-layout case wires up fixture
-state (only `case.yaml` is described in any detail), so this section is the specification for
-whoever provisions the sandbox, not a config format this suite invents.
+`claude plugin eval --help` documents `--scaffold` / `--no-scaffold`, which run "each case's
+`scaffold_script`" — phrased per-case, not scoped to `case.yaml`. That is the fixture mechanism
+this Setup should eventually become. Where `scaffold_script` is declared for a `prompt.md`-layout
+case is not documented and, with the runner gated, cannot be checked — so this section stays
+prose: a specification for whoever provisions the sandbox, not a config format this suite
+invents. Note that `--scaffold` is off by default and runs author-supplied bash as the user.
 
 ## Prompt
 

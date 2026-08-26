@@ -17,6 +17,10 @@ independent — install only the ones you want.
 
 Plugins load at session start, so restart Claude Code after installing.
 
+That `add` line does not work yet — there is no remote behind it. Until there is, add the
+marketplace by local path instead: `/plugin marketplace add <path to this clone>`, then
+`/plugin install anvil@claude-skills`.
+
 ## Plugins
 
 ### `anvil` — one command for a large piece of work

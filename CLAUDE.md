@@ -13,28 +13,39 @@ plugins for someone installing them; this file is for an agent changing the repo
 ## Layout
 
 ```
-.claude-plugin/marketplace.json   the marketplace manifest — lists every published plugin
+.claude-plugin/marketplace.json   the marketplace manifest — lists every plugin
+.plans/                           plan files written by the `anvil` command, one per run
 plugins/<name>/                   one directory per plugin
   .claude-plugin/plugin.json      that plugin's own manifest
   commands/ | agents/ | skills/   the plugin's content
+  evals/                          `claude plugin eval` cases — `anvil` only, so far
 drafts/                           not published — see below
 ```
 
-Four plugins are currently published: `anvil`, `engineering-kit`, `council`,
+Four plugins are listed in the marketplace manifest: `anvil`, `engineering-kit`, `council`,
 `game-save-re`. Each has an entry in `.claude-plugin/marketplace.json` with
-`source: "./plugins/<name>"`.
+`source: "./plugins/<name>"`. None of them is *published* in the release sense — this repo has
+no remote, so nobody outside this machine can install them. `README.md` uses "published" that
+second way; do not read the two files as saying different things.
+
+`README.md` carries its own layout tree for a reader installing the plugins. When you add or
+move a top-level directory, update both — they drifted once already.
 
 ## Version consistency
 
 Each plugin's `version` field in `plugins/<name>/.claude-plugin/plugin.json` must match
-the `version` of that plugin's entry in `.claude-plugin/marketplace.json`. If the two
-drift, `claude plugin validate` fails. When you bump a plugin's version, update both
-files in the same change.
+the `version` of that plugin's entry in `.claude-plugin/marketplace.json`. When you bump a
+plugin's version, update both files in the same change.
+
+Drift does **not** fail validation. `claude plugin validate .` reports it as a warning and
+still exits 0 with `✔ Validation passed with warnings` — so "it passed" is not enough to go
+on. At install time `plugin.json` wins and the marketplace entry is silently ignored, which is
+exactly the kind of mismatch that ships unnoticed. Treat any warning as a failure.
 
 ## Validate before every commit
 
-Run both of these and confirm they pass before committing anything under
-`.claude-plugin/` or `plugins/`:
+Run both of these before committing anything under `.claude-plugin/` or `plugins/`, and
+confirm each prints `✔ Validation passed` with **no** warning list above it:
 
 ```
 claude plugin validate .

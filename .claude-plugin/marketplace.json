@@ -8,6 +8,7 @@
   "plugins": [
     {
       "name": "big",
+      "version": "0.1.0",
       "description": "One command for a large piece of work: interview as a design tree, write a plan into the repo, execute it through executor subagents in parallel waves with a commit per task, then loop the review until clean. Resumable across sessions - the plan file carries per-task state.",
       "author": {
         "name": "BananaSpaGetti"
@@ -17,6 +18,7 @@
     },
     {
       "name": "engineering-kit",
+      "version": "0.1.0",
       "description": "Six model-invoked engineering disciplines the agent reaches for on its own: diagnosing-bugs, tdd, research, domain-modeling, codebase-design, resolving-merge-conflicts. Pairs with the big plugin, which uses them when they are installed. Derived from Matt Pocock's skills repository under MIT - see the plugin's NOTICE.",
       "author": {
         "name": "BananaSpaGetti"
@@ -26,6 +28,7 @@
     },
     {
       "name": "spec-build",
+      "version": "0.1.0",
       "description": "A two-command build workflow. /spec-it interviews you until the design tree is settled and writes a self-contained plan file; /build-it reads that plan and dispatches planner and executor subagents wave by wave, then reviews the result. Ships the planner and executor agents it needs.",
       "author": {
         "name": "BananaSpaGetti"
@@ -35,6 +38,7 @@
     },
     {
       "name": "council",
+      "version": "0.1.0",
       "description": "Convene five advisors with deliberately opposed lenses (Architect, Skeptic, Pragmatist, Researcher, Contrarian), have them peer-review each other anonymously, force a debate round when the agreement looks like groupthink, and deliver a verdict that preserves the minority view. For decisions that are expensive to reverse.",
       "author": {
         "name": "BananaSpaGetti"
@@ -44,6 +48,7 @@
     },
     {
       "name": "game-save-re",
+      "version": "0.1.0",
       "description": "A method for reverse-engineering and patching game save files: identify the container format, locate the field, re-sign checksums and length prefixes, and verify in-game. Engine-agnostic (Unity, Godot, Ren'Py, RPG Maker, custom binary).",
       "author": {
         "name": "BananaSpaGetti"

@@ -1,5 +1,8 @@
 {
   "name": "engineering-kit",
+  "version": "0.1.0",
   "description": "Six model-invoked engineering disciplines that the agent reaches for on its own: a diagnosis loop for hard bugs, test-driven development, background research against primary sources, domain modelling with CONTEXT.md and ADRs, deep-module design vocabulary, and merge-conflict resolution. Derived from Matt Pocock's skills repository under MIT - see NOTICE.",
-  "author": { "name": "BananaSpaGetti" }
+  "author": {
+    "name": "BananaSpaGetti"
+  }
 }

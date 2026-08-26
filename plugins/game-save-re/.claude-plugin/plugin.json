@@ -1,5 +1,8 @@
 {
   "name": "game-save-re",
+  "version": "0.1.0",
   "description": "Reverse-engineer and patch a game save file: identify the container, find the field, re-sign checksums and length prefixes, verify in-game.",
-  "author": { "name": "BananaSpaGetti" }
+  "author": {
+    "name": "BananaSpaGetti"
+  }
 }

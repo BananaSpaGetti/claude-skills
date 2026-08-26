@@ -1,5 +1,8 @@
 {
   "name": "council",
+  "version": "0.1.0",
   "description": "Five opposed-lens advisors, anonymous peer review, a forced debate round when the agreement looks like groupthink, and a verdict that preserves the minority view.",
-  "author": { "name": "BananaSpaGetti" }
+  "author": {
+    "name": "BananaSpaGetti"
+  }
 }

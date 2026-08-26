@@ -3,8 +3,9 @@
 Small, composable plugins for [Claude Code](https://claude.com/claude-code). Each one is
 independent — install only the ones you want.
 
-> **Status: not published yet.** The plugins below are working locally but have not been
-> tested through a marketplace install. See [Before publishing](#before-publishing).
+> **Status: v0.1.0, not published yet.** `claude plugin validate` passes on the marketplace
+> manifest and on all five plugins, but nothing has been installed through a marketplace end to
+> end. See [Before publishing](#before-publishing).
 
 ## Install
 
@@ -108,6 +109,7 @@ drafts/                           not published yet — see below
 
 ## Before publishing
 
+- [x] `claude plugin validate` passes on the marketplace and all five plugins
 - [ ] Test `/plugin marketplace add` against this repo end to end
 - [ ] Run `/big` on a real repo, start to finish, including a resume after killing the session
 - [ ] Decide whether `spec-build` ships at all — `/big` supersedes it, and its `/spec-it` calls

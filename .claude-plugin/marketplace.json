@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "anvil",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "One command for a large piece of work: interview as a design tree, write a plan into the repo, execute it through executor subagents in parallel waves with a commit per task, then loop the review until clean. Resumable across sessions - the plan file carries per-task state.",
       "author": {
         "name": "BananaSpaGetti"

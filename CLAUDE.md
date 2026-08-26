@@ -78,3 +78,12 @@ here. Provenance, what was taken, and what was changed are recorded in
 `plugins/engineering-kit/skills/`, update `NOTICE` in the same change so it stays an
 accurate record of the delta from upstream — do not let it silently go stale relative to
 the code.
+
+## Bump the version on every published change
+
+`claude plugin update` compares **version numbers, not file contents**. Editing a plugin's files
+without raising its `version` leaves every installed copy stale, and the updater will report
+`already at the latest version` while serving the old files. So: any change to a plugin's
+contents raises that plugin's `version` in **both** `plugins/<name>/.claude-plugin/plugin.json`
+and its entry in `.claude-plugin/marketplace.json`. The two must always agree, or
+`claude plugin validate` fails.

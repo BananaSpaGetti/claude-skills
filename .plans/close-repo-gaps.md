@@ -1,7 +1,7 @@
 ---
 slug: close-repo-gaps
 created: 2026-08-26
-status: executing
+status: reviewing
 branch: test/anvil-run-2
 ---
 
@@ -111,9 +111,9 @@ Facts established before planning:
 - verify: `ls -R plugins/anvil/evals && claude plugin validate plugins/anvil | tail -1`
 
 ### Task 3 — Bring the README's publishing checklist up to date
-- state: todo
+- state: done
 - blocked-by: 1, 2
-- commit:
+- commit: d4604df
 - risk: none
 - change: In `README.md`: tick the marketplace-install checklist item, citing that
   `anvil@claude-skills` installed from a local-directory marketplace and unpacked complete;
@@ -157,3 +157,15 @@ Facts established before planning:
 - 2026-08-26 — task 1's executor noticed `README.md` still claims "five plugins" while the
   marketplace and `plugins/` hold four, stale since `spec-build` was dropped. Added to task 3's
   change spec rather than fixed out of band.
+- 2026-08-26 — **resume proven.** A later session ran `/anvil` with no arguments, carrying no
+  conversation memory of the first two tasks. It listed `.plans/*.md`, read `status: executing`
+  off this file, found tasks 1 and 2 already `state: done` with `commit:` shas, and picked up at
+  task 3 as the only task whose blockers were satisfied. No task was re-run. This is the
+  citation behind the second ticked line of the README's "Before publishing" list.
+- 2026-08-26 — wave 2: task 3 done in the main loop, not delegated — its `verify:` is a
+  judgement call ("read it and confirm each ticked line maps to evidence"). `README.md` -> `d4604df`.
+  Verify re-run: `grep -A14 'Before publishing' README.md` printed the three checklist items;
+  read and confirmed each ticked line cites evidence recorded in this plan's Context or Log, and
+  that `council.workflow.js` stays unticked. The status blockquote at the top of `README.md` was
+  corrected in the same task — it still said "nothing has been installed through a marketplace
+  end to end", which the newly ticked install line directly contradicts.

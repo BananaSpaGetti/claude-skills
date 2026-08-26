@@ -13,6 +13,7 @@ plugins for someone installing them; this file is for an agent changing the repo
 ## Layout
 
 ```
+CLAUDE.md                         this file
 .claude-plugin/marketplace.json   the marketplace manifest — lists every plugin
 .plans/                           plan files written by the `anvil` command, one per run
 plugins/<name>/                   one directory per plugin
@@ -39,8 +40,12 @@ plugin's version, update both files in the same change.
 
 Drift does **not** fail validation. `claude plugin validate .` reports it as a warning and
 still exits 0 with `✔ Validation passed with warnings` — so "it passed" is not enough to go
-on. At install time `plugin.json` wins and the marketplace entry is silently ignored, which is
-exactly the kind of mismatch that ships unnoticed. Treat any warning as a failure.
+on. At install time `plugin.json` wins and the marketplace entry's *version* is silently
+ignored — the entry itself still does its job of making the plugin resolvable. That is exactly
+the kind of mismatch that ships unnoticed. Treat any warning as a failure.
+
+`claude plugin validate plugins/<name>` does not surface drift at all: it validates that
+manifest in isolation and prints a clean pass. Only `claude plugin validate .` compares the two.
 
 ## Validate before every commit
 

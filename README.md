@@ -10,16 +10,17 @@ independent — install only the ones you want.
 
 ## Install
 
+There is no remote yet, so clone this repo and add it by path:
+
 ```
-/plugin marketplace add BananaSpaGetti/claude-skills
-/plugin install anvil
+/plugin marketplace add <path to your clone>
+/plugin install anvil@claude-skills
 ```
+
+That is the form that has actually been tested. Once the repo is pushed, the usual
+`/plugin marketplace add BananaSpaGetti/claude-skills` will work in place of the first line.
 
 Plugins load at session start, so restart Claude Code after installing.
-
-That `add` line does not work yet — there is no remote behind it. Until there is, add the
-marketplace by local path instead: `/plugin marketplace add <path to this clone>`, then
-`/plugin install anvil@claude-skills`.
 
 ## Plugins
 

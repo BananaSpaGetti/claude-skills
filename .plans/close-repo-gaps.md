@@ -1,7 +1,7 @@
 ---
 slug: close-repo-gaps
 created: 2026-08-26
-status: reviewing
+status: done
 branch: test/anvil-run-2
 ---
 
@@ -169,3 +169,41 @@ Facts established before planning:
   that `council.workflow.js` stays unticked. The status blockquote at the top of `README.md` was
   corrected in the same task — it still said "nothing has been installed through a marketplace
   end to end", which the newly ticked install line directly contradicts.
+- 2026-08-26 — review round 1 (Standards + Spec axes, in parallel over `18cef3c...HEAD`).
+  Five findings, all fixed in `8b035b5`. The load-bearing one: **task 1's change spec above is
+  wrong.** It told the executor to write "the rule that a plugin's `version` must match its
+  marketplace entry, or `claude plugin validate` fails". It does not fail. Measured on a scratch
+  copy of the tree with `anvil` set to `9.9.9`: `claude plugin validate .` printed
+  `⚠ Found 1 warning … ✔ Validation passed with warnings` and **exited 0**, and
+  `claude plugin validate plugins/anvil` printed a clean pass, since per-plugin validation never
+  compares against the marketplace. `CLAUDE.md` now documents the real behaviour and tells the
+  agent to treat any warning as a failure. The task spec is left as written — it is the record
+  of what was asked for, and this line is the correction. The other four: `CLAUDE.md`'s layout
+  block had already drifted from `README.md`'s inside wave 1; both eval files claimed
+  `claude plugin eval --help` documents no fixture mechanism when it documents `--scaffold` /
+  `scaffold_script`; `CLAUDE.md` said "published" where `README.md` says "not published yet";
+  and `README.md`'s Install block gave a remote that does not exist.
+- 2026-08-26 — review round 2 confirmed all five round-1 fixes and raised five more, fixed in
+  `d42e1e9`: the install-time warning said the marketplace *entry* is ignored when only its
+  *version* is; the Install block still led with the non-working remote; `CLAUDE.md`'s layout
+  tree omitted `CLAUDE.md` itself; and `.claude-plugin/marketplace.json`'s top-level
+  `description` still advertised "a two-command spec-then-build pipeline" — stale from the same
+  `spec-build` removal that left the "five plugins" counts behind, and omitting `anvil` and
+  `engineering-kit` entirely. Manifest descriptions are not schema-checked, so validation never
+  caught it.
+- 2026-08-26 — review round 3 (the cap) confirmed all five round-2 fixes and raised three more,
+  fixed in `7c4e8c2`. One was self-inflicted: round 2's Install rewrite claimed the `/plugin`
+  slash form "has actually been tested" when what was tested is the `claude plugin ...` CLI
+  equivalent. The other two are counting errors the earlier rounds walked past:
+  `plugins/anvil/commands/anvil.md` has **eight** `## Phase` headings (0 through 7), but
+  `README.md` said "Seven phases" and omitted close-out, and the newly ticked checklist line had
+  inherited the same undercount; and `README.md` said `anvil` "stops and waits in exactly two
+  places" when Phase 0 also offers to branch off `main` and waits, Phase 0 offers `git init`,
+  and Phase 5 step 6 puts three options to the user on a failed task.
+- 2026-08-26 — **surviving, not fixed:** `plugins/anvil/commands/anvil.md:11` carries the same
+  false "two places still stop and wait" claim that was corrected in `README.md`. Left alone
+  deliberately — that file is the command being exercised by this very run, and editing it
+  mid-run is outside every task in this plan. It is a one-line fix for a separate change.
+- 2026-08-26 — closed out. 3/3 tasks done: tasks 1 and 2 by concurrent executors in wave 1,
+  task 3 in the main loop because its `verify:` is a judgement call. 3 review rounds run,
+  13 findings fixed across them.

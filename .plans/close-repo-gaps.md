@@ -75,9 +75,9 @@ Facts established before planning:
 ## Tasks
 
 ### Task 1 — Add a repo-level CLAUDE.md
-- state: doing
+- state: done
 - blocked-by: none
-- commit:
+- commit: a8293e3
 - risk: none
 - change: Create `CLAUDE.md` at the repo root, orienting an agent that has just cloned this
   repo. Cover: what the repo is (a Claude Code plugin marketplace, not an application); the
@@ -95,9 +95,9 @@ Facts established before planning:
 - verify: `test -f CLAUDE.md && claude plugin validate . | tail -1`
 
 ### Task 2 — Author an eval suite for anvil
-- state: doing
+- state: done
 - blocked-by: none
-- commit:
+- commit: 1eb51d5
 - risk: none
 - change: Create `plugins/anvil/evals/` holding one case, in the `prompt.md` +
   `graders/*.md` layout. The case puts the agent in a repo with a dirty working tree and asks
@@ -122,7 +122,9 @@ Facts established before planning:
   run; leave the `council.workflow.js` item unticked, since it has still never been executed;
   update the repo layout section to include `CLAUDE.md`, `.plans/` and
   `plugins/anvil/evals/`; and add a short note recording the open question of whether a bare
-  `/anvil` resolves to the plugin for someone with no user-scope command of that name.
+  `/anvil` resolves to the plugin for someone with no user-scope command of that name. Also fix
+  the stale plugin count: `README.md:7` and `README.md:92` both say "five plugins", left behind
+  when `spec-build` was removed; the marketplace and `plugins/` both hold four.
 - done-when: no ticked line claims something unverified, and the layout section matches disk.
 - verify: `grep -A14 'Before publishing' README.md` — read it and confirm each ticked line
   maps to evidence recorded in this plan's Context or Log.
@@ -145,3 +147,13 @@ Facts established before planning:
 ## Log
 
 - 2026-08-26 — plan written on branch `test/anvil-run-2` off `4f86c83`.
+- 2026-08-26 — wave 1: two executors ran concurrently. Task 1 -> `a8293e3`, task 2 -> `1eb51d5`.
+  Both verify commands re-run by the main loop: `claude plugin validate .` and
+  `claude plugin validate plugins/anvil` both printed `✔ Validation passed`; `ls -R` listed
+  the four eval files. Executors ran no git commands; the main loop committed sequentially.
+- 2026-08-26 — task 2's executor flagged two places it had to guess, both recorded in the eval
+  files themselves: how a `prompt.md` case receives its git fixture, and the grader file format
+  beyond the single documented `tool_used` key. Both written as prose, no invented config keys.
+- 2026-08-26 — task 1's executor noticed `README.md` still claims "five plugins" while the
+  marketplace and `plugins/` hold four, stale since `spec-build` was dropped. Added to task 3's
+  change spec rather than fixed out of band.

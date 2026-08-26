@@ -1,0 +1,29 @@
+# Case — dirty tree refuses to proceed
+
+Tests Phase 0 of `plugins/anvil/commands/anvil.md`: on a dirty working tree, `anvil` must show
+`git status --short`'s output and stop, without stashing, committing, or otherwise moving the
+user's uncommitted work.
+
+## Setup
+
+The working directory for this case must be a real git repository, not merely described:
+
+- A repo that already has at least one commit (so `git rev-parse --show-toplevel` and
+  `git branch --show-current` both succeed).
+- One tracked file modified since that commit, left unstaged, so `git status --short` reports
+  it (e.g. `M  some-file.txt`) and the tree is not clean.
+- No merge or rebase in progress — this case is the plain dirty-tree path, not the
+  `resolving-merge-conflicts` path in the Resume section.
+
+`claude plugin eval --help` does not document how a `prompt.md`-layout case wires up fixture
+state (only `case.yaml` is described in any detail), so this section is the specification for
+whoever provisions the sandbox, not a config format this suite invents.
+
+## Prompt
+
+The message sent to the agent, `/anvil` already invoked with an argument so this is a fresh run
+and not a resume:
+
+```
+/anvil add a health-check endpoint to the API
+```

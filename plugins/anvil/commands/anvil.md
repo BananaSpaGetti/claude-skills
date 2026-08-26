@@ -74,8 +74,8 @@ question.
 
 Fall back to the numbered text format below when the tool does not fit: a question that wants
 prose rather than a choice, a round wider than four questions (ask the four that unblock the
-most and hold the rest for the next round), or a choice whose options cannot be stated without
-a paragraph each.
+most and hold the rest for the next round), a question with more than four real options, or a
+choice whose options cannot be stated without a paragraph each.
 
 ```
 Q1 — <question title>: <question body, including any options>
@@ -87,7 +87,9 @@ Q2 — <question title>: ...
   -> <your recommended answer>
 ```
 
-Either way: **stop and wait**. Each round of answers reshapes the tree: settled decisions push the
+Either way the round ends with the user's answers in hand and nothing else attempted — the
+tool returns them directly, the text format waits for the user's next message. **Never carry on
+past an unanswered question.** Each round of answers reshapes the tree: settled decisions push the
 frontier outward. Recompute it and ask the next round. A question whose answer depends on another
 question still open in this round belongs to a *later* round, not this one.
 

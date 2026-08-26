@@ -1,7 +1,7 @@
 ---
 slug: anvil-self-test
 created: 2026-08-26
-status: approved
+status: reviewing
 branch: test/anvil-run-1
 ---
 

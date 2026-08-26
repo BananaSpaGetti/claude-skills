@@ -1,8 +1,0 @@
-{
-  "name": "spec-build",
-  "version": "0.1.0",
-  "description": "A two-command build workflow: /spec-it grills you until the design is settled and writes a self-contained plan file; /build-it executes that plan through planner and executor subagents, then reviews the result.",
-  "author": {
-    "name": "BananaSpaGetti"
-  }
-}

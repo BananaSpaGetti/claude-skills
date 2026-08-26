@@ -11,18 +11,18 @@ independent — install only the ones you want.
 
 ```
 /plugin marketplace add BananaSpaGetti/claude-skills
-/plugin install spec-build
+/plugin install anvil
 ```
 
 Plugins load at session start, so restart Claude Code after installing.
 
 ## Plugins
 
-### `big` — one command for a large piece of work
+### `anvil` — one command for a large piece of work
 
 ```
-/big <what you want built>     start
-/big                           resume an in-progress plan
+/anvil <what you want built>   start
+/anvil                         resume an in-progress plan
 ```
 
 Seven phases in one conversation: preflight, orient, interview, plan, approve, execute, review.
@@ -39,7 +39,7 @@ Everywhere else it runs.
   main loop commits each task sequentially instead. You keep `git revert <sha>` per task.
 - **Review loop, capped at 3 rounds.** It runs until the review comes back clean, then says
   plainly what is still unresolved rather than declaring victory at the cap.
-- **Resumable.** Run `/big` with no arguments after a session ends: it reads the per-task state
+- **Resumable.** Run `/anvil` with no arguments after a session ends: it reads the per-task state
   out of the plan file and picks up at the first unstarted task. A dirty tree is expected after a
   mid-wave failure, so resume asks what to do rather than refusing to run.
 
@@ -51,7 +51,7 @@ Some work is deliberately *not* delegated: anything the plan marks `risk: destru
 Model-invoked skills, so you never type them: `diagnosing-bugs`, `tdd`, `research`,
 `domain-modeling`, `codebase-design`, `resolving-merge-conflicts`.
 
-`big` uses them when they are present and works without them when they are not — it declares no
+`anvil` uses them when they are present and works without them when they are not — it declares no
 hard dependency on this plugin.
 
 Derived from [Matt Pocock's skills](https://github.com/mattpocock/skills) under MIT. See
@@ -59,26 +59,6 @@ Derived from [Matt Pocock's skills](https://github.com/mattpocock/skills) under 
 want them as their author ships them, with his updates, install `mattpocock-skills` instead —
 do not install both.
 
-### `spec-build` — plan it properly, then build it
-
-Two commands, deliberately separate. Planning needs your answers, so it cannot run unattended;
-building should not stop to ask.
-
-| | |
-|---|---|
-| `/spec-it <what you want>` | Interviews you as a design tree — a whole round of numbered questions at a time, each with a recommended answer — until nothing is silently assumed. Writes a self-contained plan to `~/.claude/build-plans/<slug>.md`. |
-| `/build-it <slug>` | Reads the plan, groups tasks into waves by their `blocked-by` edges, and dispatches one `executor` subagent per task concurrently. Reviews the result and reports what actually happened. |
-
-The plan file is the seam between them: it survives a session restart, and it is written to
-be understood by an agent with zero conversation context.
-
-Running `/build-it` is itself your authorisation to dispatch agents — it will not ask again
-per task. It deliberately keeps some work in the main conversation instead of delegating:
-anything the plan flags as destructive, any binary or checksummed-format edit, and anything
-whose verification is "look at it and judge".
-
-Ships two agents: `planner` (plans, never edits) and `executor` (implements a finished spec,
-never decides scope). Both declare a model in their frontmatter — change it to suit your setup.
 
 ### `council` — five advisors who are supposed to disagree
 
@@ -111,10 +91,7 @@ drafts/                           not published yet — see below
 
 - [x] `claude plugin validate` passes on the marketplace and all five plugins
 - [ ] Test `/plugin marketplace add` against this repo end to end
-- [ ] Run `/big` on a real repo, start to finish, including a resume after killing the session
-- [ ] Decide whether `spec-build` ships at all — `/big` supersedes it, and its `/spec-it` calls
-      the `grilling` skill from `mattpocock-skills` without declaring that dependency
-- [ ] Test `/spec-it` → `/build-it` on a real repo, not just a scratch directory
+- [ ] Run `/anvil` on a real repo, start to finish, including a resume after killing the session
 - [ ] `council.workflow.js` is syntax-checked only — run it once for real
 - [ ] Decide whether `drafts/thai-deliverable` and `drafts/viral-promo-clip` ship, and
       genericise them if so (both are currently written for a Thai-language audience)

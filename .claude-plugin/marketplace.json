@@ -7,34 +7,24 @@
   },
   "plugins": [
     {
-      "name": "big",
+      "name": "anvil",
       "version": "0.1.0",
       "description": "One command for a large piece of work: interview as a design tree, write a plan into the repo, execute it through executor subagents in parallel waves with a commit per task, then loop the review until clean. Resumable across sessions - the plan file carries per-task state.",
       "author": {
         "name": "BananaSpaGetti"
       },
       "category": "workflow",
-      "source": "./plugins/big"
+      "source": "./plugins/anvil"
     },
     {
       "name": "engineering-kit",
       "version": "0.1.0",
-      "description": "Six model-invoked engineering disciplines the agent reaches for on its own: diagnosing-bugs, tdd, research, domain-modeling, codebase-design, resolving-merge-conflicts. Pairs with the big plugin, which uses them when they are installed. Derived from Matt Pocock's skills repository under MIT - see the plugin's NOTICE.",
+      "description": "Six model-invoked engineering disciplines the agent reaches for on its own: diagnosing-bugs, tdd, research, domain-modeling, codebase-design, resolving-merge-conflicts. Pairs with the anvil plugin, which uses them when they are installed. Derived from Matt Pocock's skills repository under MIT - see the plugin's NOTICE.",
       "author": {
         "name": "BananaSpaGetti"
       },
       "category": "development",
       "source": "./plugins/engineering-kit"
-    },
-    {
-      "name": "spec-build",
-      "version": "0.1.0",
-      "description": "A two-command build workflow. /spec-it interviews you until the design tree is settled and writes a self-contained plan file; /build-it reads that plan and dispatches planner and executor subagents wave by wave, then reviews the result. Ships the planner and executor agents it needs.",
-      "author": {
-        "name": "BananaSpaGetti"
-      },
-      "category": "workflow",
-      "source": "./plugins/spec-build"
     },
     {
       "name": "council",

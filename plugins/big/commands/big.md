@@ -13,6 +13,21 @@ plan approval (phase 4). Nowhere else.
 
 Requested work: $ARGUMENTS
 
+### Optional skills
+
+If these skills are available in the session, use them at the points marked below. **None of
+them is required** — this command is self-contained, and if a skill is not installed, do the
+same work inline and say nothing about it. They ship together in the `engineering-kit` plugin.
+
+| Skill | Used at |
+|---|---|
+| `research` | Phase 2, when a frontier question needs facts from primary sources |
+| `codebase-design` | Phase 3, when the plan has to decide where a seam or module boundary goes |
+| `domain-modeling` | Phase 3, when the work turns on terms the repo has not pinned down |
+| `tdd` | Phase 5, for any task whose `verify:` is a test that does not exist yet |
+| `diagnosing-bugs` | Phase 5, when a task fails and the cause is not obvious |
+| `resolving-merge-conflicts` | Resume, when the dirty tree turns out to be a conflicted merge |
+
 ---
 
 ## Phase 0 — Preflight
@@ -69,9 +84,10 @@ question still open in this round belongs to a *later* round, not this one.
 Rules:
 
 - **Facts are never the user's job.** When a frontier question needs a fact from the filesystem,
-  the web, or the git history, dispatch a subagent to find it. Do not block the rest of the round
-  on it — a running exploration is an unsettled prerequisite, so only the questions downstream of
-  it wait.
+  the web, or the git history, dispatch a subagent to find it. If the fact needs primary sources
+  rather than a quick look — an API contract, a library's actual behaviour, a spec — use the
+  `research` skill, which runs in the background. Never block the round on an exploration — a
+  running one is just an unsettled prerequisite, so only the questions downstream of it wait.
 - **Decisions are always the user's.** Put each one to them and wait.
 - The interview is done when the frontier is empty: every branch visited, nothing silently
   assumed.
@@ -80,6 +96,11 @@ Rules:
 
 Pick a short kebab-case slug. Write to **`.plans/<slug>.md` inside the repo** — it gets committed,
 so it travels with the branch and a cloud session sees the same plan.
+
+Two skills earn their keep here, if they are installed: `codebase-design` when the plan has to
+decide where a seam or a module boundary goes, and `domain-modeling` when the work turns on terms
+this repo has never pinned down. Both are references to consult while writing the plan, not
+sessions to run.
 
 The executors that read this file have **zero context from this conversation**. Anything settled
 in the interview that is not in the file is lost. Write it self-contained, in English:
@@ -168,6 +189,8 @@ For each wave:
    - the plan's **Goal** and **Context** sections, verbatim
    - that one task: `change`, `done-when`, `verify`
    - the paths it may touch, and the instruction to touch nothing else
+   - if the task's `verify:` names a test that does not exist yet, tell the executor to use the
+     `tdd` skill and write the failing test first
    - **"Do not run `git commit`, `git add`, or any other git write command."**
      Concurrent executors would race on `.git/index.lock`. Committing is the main loop's job.
 
@@ -184,7 +207,9 @@ For each wave:
    Write the resulting sha into that task's `commit:` field and set `state: done`. Append a Log
    line. Commit the plan-file update itself as `plan(<slug>): task <N> done`.
 
-6. **If a task failed**, set `state: failed`, stop the wave, and put three options to the user:
+6. **If a task failed**, set `state: failed` and stop the wave. If the cause is not obvious from
+   the executor's report and the `verify:` output, use the `diagnosing-bugs` skill before
+   guessing — it is a loop for exactly this. Then put three options to the user:
    - fix this task and retry it
    - go back and amend the plan, re-planning the remaining tasks
    - abandon — `git revert` the task commits made so far, in reverse order
@@ -230,6 +255,8 @@ Reached when this command is run with no arguments.
 2. Check the working tree:
    - **Clean** — report where the plan stands (tasks done / total, which wave is next) and continue
      at the first `todo` task whose blockers are all `done`.
+   - **Dirty because a merge or rebase is in progress** (`git status` says so) — use the
+     `resolving-merge-conflicts` skill to finish it before touching the plan at all.
    - **Dirty** — expected after a mid-wave failure. Show `git status --short`, name the task
      sitting at `doing` or `failed`, and ask before touching anything:
      - keep the working-tree changes and continue from there

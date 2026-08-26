@@ -1,0 +1,40 @@
+# NOTICE
+
+The six skills bundled in this plugin are derived from **Matt Pocock's `skills`**
+repository and are redistributed here under the MIT License.
+
+- Upstream: https://github.com/mattpocock/skills
+- Upstream version this was taken from: `mattpocock-skills` 1.2.3
+  (git `0ab1b63a410a03d3627979a109c8695de27af954`)
+- Upstream license: MIT — full text in [LICENSE.upstream](./LICENSE.upstream)
+- Copyright (c) 2026 Matt Pocock
+
+Skills taken:
+
+| Skill | Taken from |
+|---|---|
+| `codebase-design` | `skills/engineering/codebase-design` |
+| `diagnosing-bugs` | `skills/engineering/diagnosing-bugs` |
+| `domain-modeling` | `skills/engineering/domain-modeling` |
+| `research` | `skills/engineering/research` |
+| `resolving-merge-conflicts` | `skills/engineering/resolving-merge-conflicts` |
+| `tdd` | `skills/engineering/tdd` |
+
+## What was changed
+
+- The other 19 skills in the upstream plugin were not taken. Several of them
+  (`to-spec`, `to-tickets`, `implement`, `triage`, `wayfinder`) require a configured
+  issue tracker via upstream's `setup-matt-pocock-skills`, which this plugin does not ship.
+- Each skill's `agents/openai.yaml` was removed. It is Codex packaging metadata and is
+  unused by Claude Code.
+- Upstream's `node_modules/` (21 MB of authoring tooling) was not taken.
+- The skill bodies themselves are unmodified from upstream at the version above.
+
+If you want these skills as their author ships them, with updates as he publishes them,
+install the upstream plugin instead:
+
+```
+/plugin install mattpocock-skills
+```
+
+Installing both leaves you with every skill twice.

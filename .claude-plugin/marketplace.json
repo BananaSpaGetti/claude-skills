@@ -16,6 +16,15 @@
       "source": "./plugins/big"
     },
     {
+      "name": "engineering-kit",
+      "description": "Six model-invoked engineering disciplines the agent reaches for on its own: diagnosing-bugs, tdd, research, domain-modeling, codebase-design, resolving-merge-conflicts. Pairs with the big plugin, which uses them when they are installed. Derived from Matt Pocock's skills repository under MIT - see the plugin's NOTICE.",
+      "author": {
+        "name": "BananaSpaGetti"
+      },
+      "category": "development",
+      "source": "./plugins/engineering-kit"
+    },
+    {
       "name": "spec-build",
       "description": "A two-command build workflow. /spec-it interviews you until the design tree is settled and writes a self-contained plan file; /build-it reads that plan and dispatches planner and executor subagents wave by wave, then reviews the result. Ships the planner and executor agents it needs.",
       "author": {

@@ -17,6 +17,47 @@ Plugins load at session start, so restart Claude Code after installing.
 
 ## Plugins
 
+### `big` — one command for a large piece of work
+
+```
+/big <what you want built>     start
+/big                           resume an in-progress plan
+```
+
+Seven phases in one conversation: preflight, orient, interview, plan, approve, execute, review.
+It stops and waits in exactly two places — the interview rounds and the single plan approval.
+Everywhere else it runs.
+
+- **Interview as a design tree.** The frontier is every decision whose prerequisites are settled;
+  it asks that whole frontier in one numbered round, each question with a recommended answer, then
+  waits. Facts are never your job — those go to subagents.
+- **The plan lives in the repo**, at `.plans/<slug>.md`, and gets committed. Each task carries its
+  own `state:`, `blocked-by:`, `risk:` and `commit:` fields.
+- **Parallel waves.** One `executor` subagent per task, all dispatched together. Executors are
+  forbidden from running git commands — concurrent ones would race on `.git/index.lock` — so the
+  main loop commits each task sequentially instead. You keep `git revert <sha>` per task.
+- **Review loop, capped at 3 rounds.** It runs until the review comes back clean, then says
+  plainly what is still unresolved rather than declaring victory at the cap.
+- **Resumable.** Run `/big` with no arguments after a session ends: it reads the per-task state
+  out of the plan file and picks up at the first unstarted task. A dirty tree is expected after a
+  mid-wave failure, so resume asks what to do rather than refusing to run.
+
+Some work is deliberately *not* delegated: anything the plan marks `risk: destructive`,
+`risk: binary-format`, or `risk: judgement-call` stays in the main conversation.
+
+### `engineering-kit` — six disciplines the agent reaches for on its own
+
+Model-invoked skills, so you never type them: `diagnosing-bugs`, `tdd`, `research`,
+`domain-modeling`, `codebase-design`, `resolving-merge-conflicts`.
+
+`big` uses them when they are present and works without them when they are not — it declares no
+hard dependency on this plugin.
+
+Derived from [Matt Pocock's skills](https://github.com/mattpocock/skills) under MIT. See
+[NOTICE](./plugins/engineering-kit/NOTICE) for exactly what was taken and what was changed. If you
+want them as their author ships them, with his updates, install `mattpocock-skills` instead —
+do not install both.
+
 ### `spec-build` — plan it properly, then build it
 
 Two commands, deliberately separate. Planning needs your answers, so it cannot run unattended;
@@ -68,6 +109,9 @@ drafts/                           not published yet — see below
 ## Before publishing
 
 - [ ] Test `/plugin marketplace add` against this repo end to end
+- [ ] Run `/big` on a real repo, start to finish, including a resume after killing the session
+- [ ] Decide whether `spec-build` ships at all — `/big` supersedes it, and its `/spec-it` calls
+      the `grilling` skill from `mattpocock-skills` without declaring that dependency
 - [ ] Test `/spec-it` → `/build-it` on a real repo, not just a scratch directory
 - [ ] `council.workflow.js` is syntax-checked only — run it once for real
 - [ ] Decide whether `drafts/thai-deliverable` and `drafts/viral-promo-clip` ship, and

@@ -58,10 +58,10 @@ plan whose tree is dirty. Everywhere else it runs without checking in.
 Some work is deliberately *not* delegated: anything the plan marks `risk: destructive`,
 `risk: binary-format`, or `risk: judgement-call` stays in the main conversation.
 
-### `engineering-kit` — six disciplines the agent reaches for on its own
+### `engineering-kit` — nine disciplines the agent reaches for on its own
 
-Model-invoked skills, so you never type them: `diagnosing-bugs`, `tdd`, `research`,
-`domain-modeling`, `codebase-design`, `resolving-merge-conflicts`.
+Model-invoked skills, so you never type them: `diagnosing-bugs`, `tdd`, `prototype`, `research`,
+`domain-modeling`, `codebase-design`, `resolving-merge-conflicts`, `wizard`, `writing-for-agents`.
 
 `anvil` uses them when they are present and works without them when they are not — it declares no
 hard dependency on this plugin.

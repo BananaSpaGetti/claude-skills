@@ -18,8 +18,8 @@
     },
     {
       "name": "engineering-kit",
-      "version": "0.1.0",
-      "description": "Six model-invoked engineering disciplines the agent reaches for on its own: diagnosing-bugs, tdd, research, domain-modeling, codebase-design, resolving-merge-conflicts. Pairs with the anvil plugin, which uses them when they are installed. Derived from Matt Pocock's skills repository under MIT - see the plugin's NOTICE.",
+      "version": "0.2.0",
+      "description": "Nine model-invoked engineering disciplines the agent reaches for on its own: diagnosing-bugs, tdd, prototype, research, domain-modeling, codebase-design, resolving-merge-conflicts, wizard, writing-for-agents. Pairs with the anvil plugin, which uses them when they are installed. Derived from Matt Pocock's skills repository under MIT - see the plugin's NOTICE.",
       "author": {
         "name": "BananaSpaGetti"
       },

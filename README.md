@@ -17,8 +17,10 @@ There is no remote yet, so clone this repo and add it by path:
 /plugin install anvil@claude-skills
 ```
 
-That is the form that has actually been tested. Once the repo is pushed, the usual
-`/plugin marketplace add BananaSpaGetti/claude-skills` will work in place of the first line.
+Once the repo is pushed, the usual `/plugin marketplace add BananaSpaGetti/claude-skills` will
+work in place of the first line. What has actually been tested is the CLI equivalent of the two
+commands above — `claude plugin marketplace add <path>` and
+`claude plugin install anvil@claude-skills` — not the `/plugin` slash forms.
 
 Plugins load at session start, so restart Claude Code after installing.
 
@@ -31,9 +33,10 @@ Plugins load at session start, so restart Claude Code after installing.
 /anvil                         resume an in-progress plan
 ```
 
-Seven phases in one conversation: preflight, orient, interview, plan, approve, execute, review.
-It stops and waits in exactly two places — the interview rounds and the single plan approval.
-Everywhere else it runs.
+Eight phases in one conversation: preflight, orient, interview, plan, approve, execute, review,
+close out. Two of them are where it *routinely* stops and waits — the interview rounds and the
+single plan approval. Everywhere else it runs, except for the preflight offers (branching off
+`main`, `git init`) and the three-way choice it puts to you when a task fails.
 
 - **Interview as a design tree.** The frontier is every decision whose prerequisites are settled;
   it asks that whole frontier in one numbered round, each question with a recommended answer, then
@@ -113,7 +116,7 @@ that name has not been tested, so the `/anvil:anvil` stutter is left as-is until
       plugin unpacked complete to `~/.claude/plugins/cache/claude-skills/anvil/0.1.0/`. Only the
       local-directory form is proven; there is no remote to add by name yet.
 - [x] Run `/anvil` on a real repo, start to finish — the first run
-      (`.plans/anvil-self-test.md`) went through all seven phases, but was cut to one main-loop
+      (`.plans/anvil-self-test.md`) went through all eight phases, but was cut to one main-loop
       task at approval, so it proved nothing about dispatch. The second run
       (`.plans/close-repo-gaps.md`) proved the rest separately: two `executor` subagents
       dispatched concurrently in wave 1, wave 2 held until both were `done`, a commit per task,

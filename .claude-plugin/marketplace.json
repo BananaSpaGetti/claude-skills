@@ -7,23 +7,38 @@
   },
   "plugins": [
     {
+      "name": "big",
+      "description": "One command for a large piece of work: interview as a design tree, write a plan into the repo, execute it through executor subagents in parallel waves with a commit per task, then loop the review until clean. Resumable across sessions - the plan file carries per-task state.",
+      "author": {
+        "name": "BananaSpaGetti"
+      },
+      "category": "workflow",
+      "source": "./plugins/big"
+    },
+    {
       "name": "spec-build",
       "description": "A two-command build workflow. /spec-it interviews you until the design tree is settled and writes a self-contained plan file; /build-it reads that plan and dispatches planner and executor subagents wave by wave, then reviews the result. Ships the planner and executor agents it needs.",
-      "author": { "name": "BananaSpaGetti" },
+      "author": {
+        "name": "BananaSpaGetti"
+      },
       "category": "workflow",
       "source": "./plugins/spec-build"
     },
     {
       "name": "council",
       "description": "Convene five advisors with deliberately opposed lenses (Architect, Skeptic, Pragmatist, Researcher, Contrarian), have them peer-review each other anonymously, force a debate round when the agreement looks like groupthink, and deliver a verdict that preserves the minority view. For decisions that are expensive to reverse.",
-      "author": { "name": "BananaSpaGetti" },
+      "author": {
+        "name": "BananaSpaGetti"
+      },
       "category": "workflow",
       "source": "./plugins/council"
     },
     {
       "name": "game-save-re",
       "description": "A method for reverse-engineering and patching game save files: identify the container format, locate the field, re-sign checksums and length prefixes, and verify in-game. Engine-agnostic (Unity, Godot, Ren'Py, RPG Maker, custom binary).",
-      "author": { "name": "BananaSpaGetti" },
+      "author": {
+        "name": "BananaSpaGetti"
+      },
       "category": "productivity",
       "source": "./plugins/game-save-re"
     }

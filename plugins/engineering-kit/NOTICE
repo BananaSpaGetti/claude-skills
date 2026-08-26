@@ -28,7 +28,10 @@ Skills taken:
 - Each skill's `agents/openai.yaml` was removed. It is Codex packaging metadata and is
   unused by Claude Code.
 - Upstream's `node_modules/` (21 MB of authoring tooling) was not taken.
-- The skill bodies themselves are unmodified from upstream at the version above.
+- `skills/tdd/SKILL.md` had its cross-reference to `codebase-design` namespaced to
+  `engineering-kit:codebase-design`, because a skill shipped inside a plugin is addressed as
+  `plugin:skill`. This is the only edit to a skill body; everything else is unmodified from
+  upstream at the version above.
 
 If you want these skills as their author ships them, with updates as he publishes them,
 install the upstream plugin instead:

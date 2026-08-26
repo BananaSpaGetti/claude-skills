@@ -1,0 +1,31 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "claude-skills",
+  "description": "Small, composable Claude Code plugins: a two-command spec-then-build pipeline, an adversarial advisory council, and a game save-file reverse-engineering method.",
+  "owner": {
+    "name": "BananaSpaGetti"
+  },
+  "plugins": [
+    {
+      "name": "spec-build",
+      "description": "A two-command build workflow. /spec-it interviews you until the design tree is settled and writes a self-contained plan file; /build-it reads that plan and dispatches planner and executor subagents wave by wave, then reviews the result. Ships the planner and executor agents it needs.",
+      "author": { "name": "BananaSpaGetti" },
+      "category": "workflow",
+      "source": "./plugins/spec-build"
+    },
+    {
+      "name": "council",
+      "description": "Convene five advisors with deliberately opposed lenses (Architect, Skeptic, Pragmatist, Researcher, Contrarian), have them peer-review each other anonymously, force a debate round when the agreement looks like groupthink, and deliver a verdict that preserves the minority view. For decisions that are expensive to reverse.",
+      "author": { "name": "BananaSpaGetti" },
+      "category": "workflow",
+      "source": "./plugins/council"
+    },
+    {
+      "name": "game-save-re",
+      "description": "A method for reverse-engineering and patching game save files: identify the container format, locate the field, re-sign checksums and length prefixes, and verify in-game. Engine-agnostic (Unity, Godot, Ren'Py, RPG Maker, custom binary).",
+      "author": { "name": "BananaSpaGetti" },
+      "category": "productivity",
+      "source": "./plugins/game-save-re"
+    }
+  ]
+}

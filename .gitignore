@@ -1,0 +1,13 @@
+# Never commit local Claude Code state — it contains credentials and session logs
+.claude/
+.credentials.json
+*.log
+
+# OS / editor noise
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
+
+node_modules/

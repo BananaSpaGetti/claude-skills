@@ -206,4 +206,11 @@ Facts established before planning:
   mid-run is outside every task in this plan. It is a one-line fix for a separate change.
 - 2026-08-26 — closed out. 3/3 tasks done: tasks 1 and 2 by concurrent executors in wave 1,
   task 3 in the main loop because its `verify:` is a judgement call. 3 review rounds run,
-  13 findings fixed across them.
+  13 findings raised: 12 fixed, and round 2's finding A answered by the Log correction above
+  rather than by editing the task spec it concerns.
+- 2026-08-26 — one more correction, after the review cap. Every round's own prose fix had
+  introduced a fresh inaccuracy that the next round caught, and round 3's fixes had had no such
+  pass. They did contain one: the rewritten `README.md` phase summary listed the places `anvil`
+  stops as "the preflight offers and the three-way choice on a failed task", omitting the
+  Resume section's own questions — the same false-by-omission shape the round had just fixed.
+  Rewritten to describe the stops rather than enumerate them.

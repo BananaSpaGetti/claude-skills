@@ -34,9 +34,10 @@ Plugins load at session start, so restart Claude Code after installing.
 ```
 
 Eight phases in one conversation: preflight, orient, interview, plan, approve, execute, review,
-close out. Two of them are where it *routinely* stops and waits — the interview rounds and the
-single plan approval. Everywhere else it runs, except for the preflight offers (branching off
-`main`, `git init`) and the three-way choice it puts to you when a task fails.
+close out. Two of them are where it stops and waits *by design* — the interview rounds and the
+single plan approval. It will also stop and ask when something needs a decision it should not
+make for you: whether to branch off `main`, what to do about a failed task, how to pick up a
+plan whose tree is dirty. Everywhere else it runs without checking in.
 
 - **Interview as a design tree.** The frontier is every decision whose prerequisites are settled;
   it asks that whole frontier in one numbered round, each question with a recommended answer, then

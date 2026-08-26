@@ -21,7 +21,7 @@ commit, and the capped review loop.
 
 ## Context
 
-- `plugins/anvil/commands/anvil.md` — the command under test; seven phases, resumable. Task 2
+- `plugins/anvil/commands/anvil.md` — the command under test; seven phases, resumable. Task 1
   edits this file.
 - `plugins/anvil/.claude-plugin/plugin.json` — `anvil` v0.1.0.
 - `plugins/engineering-kit/` — six skills vendored from `mattpocock/skills` under MIT; see its
@@ -29,7 +29,7 @@ commit, and the capped review loop.
 - `plugins/council/`, `plugins/game-save-re/` — the other two published plugins.
 - `.claude-plugin/marketplace.json` — lists all four plugins; every entry carries
   `version: "0.1.0"` and a `source` of the form `./plugins/<name>`.
-- `README.md` — has a "Before publishing" checklist. Task 4 updates it.
+- `README.md` — has a "Before publishing" checklist, left stale by this run.
 - `drafts/` — `thai-deliverable` and `viral-promo-clip`, deliberately not wired into the
   marketplace. Out of scope here.
 - `LICENSE` — MIT, copyright `BananaSpaGetti`.
@@ -55,14 +55,13 @@ Facts established during the interview:
   Judging how to phrase agent instructions is exactly the `judgement-call` risk class, so the
   main loop does it. This still tests the "some work is deliberately not delegated" path.
 - **`drafts/` stays untouched.** Deciding whether those two skills ship is its own interview.
-- Rejected: adding an `AGENTS.md` as well as `CLAUDE.md`. One file, no duplication.
 
 ## Tasks
 
 ### Task 1 — Teach anvil's interview to offer clickable options
-- state: todo
+- state: done
 - blocked-by: none
-- commit:
+- commit: d5b55ff
 - risk: judgement-call
 - change: In `plugins/anvil/commands/anvil.md`, phase 2, add a rule: when a round's questions
   are discrete choices, put them to the user with the `AskUserQuestion` tool so they can click
@@ -96,3 +95,4 @@ Facts established during the interview:
 
 - 2026-08-26 — plan written on branch `test/anvil-run-1` off `619276c`.
 - 2026-08-26 — scope cut from four tasks to one at approval; three tasks moved to Out of scope.
+- 2026-08-26 — task 1 done in the main loop (not delegated, risk: judgement-call), commit `d5b55ff`. Verification: `grep -c AskUserQuestion` returned 1; `claude plugin validate plugins/anvil` passed.

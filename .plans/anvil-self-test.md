@@ -1,7 +1,7 @@
 ---
 slug: anvil-self-test
 created: 2026-08-26
-status: reviewing
+status: done
 branch: test/anvil-run-1
 ---
 
@@ -95,4 +95,9 @@ Facts established during the interview:
 
 - 2026-08-26 — plan written on branch `test/anvil-run-1` off `619276c`.
 - 2026-08-26 — scope cut from four tasks to one at approval; three tasks moved to Out of scope.
+- 2026-08-26 — review loop: 2 rounds, cap 3. Round 1 found two gaps in the new wording (the
+  four-option-per-question limit was unstated, and "stop and wait" read wrong for the tool
+  path); both fixed in `b93045f`. Round 2 clean, loop stopped.
+- 2026-08-26 — the review was done inline rather than by invoking the `code-review` skill: the
+  diff was 14 lines of markdown. A deviation from phase 6 as written.
 - 2026-08-26 — task 1 done in the main loop (not delegated, risk: judgement-call), commit `d5b55ff`. Verification: `grep -c AskUserQuestion` returned 1; `claude plugin validate plugins/anvil` passed.

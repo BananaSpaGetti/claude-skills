@@ -22,8 +22,8 @@ A plugin command is addressed as `<plugin>:<command>`, so this one is `/anvil:an
 ### `anvil` — one command for a large piece of work
 
 ```
-/anvil <what you want built>   start
-/anvil                         resume an in-progress plan
+/anvil:anvil <what you want built>   start
+/anvil:anvil                         resume an in-progress plan
 ```
 
 Eight phases in one conversation: preflight, orient, interview, plan, approve, execute, review,
@@ -34,9 +34,17 @@ plan whose tree is dirty. Everywhere else it runs without checking in.
 
 - **Interview as a design tree.** The frontier is every decision whose prerequisites are settled;
   it asks that whole frontier in one numbered round, each question with a recommended answer, then
-  waits. Facts are never your job — those go to subagents.
+  waits. Facts are never your job — those go to subagents. It also argues with the decisions you
+  arrived holding: a decision nobody questioned is not the same as one that was settled. It stops
+  arguing when it runs out of evidence you have not already answered, not after a fixed number of
+  tries.
 - **The plan lives in the repo**, at `.plans/<slug>.md`, and gets committed. Each task carries its
   own `state:`, `blocked-by:`, `risk:` and `commit:` fields.
+- **Decisions outlive the plan.** A plan file is spent once its tasks land, so anything settled in
+  the interview that will still matter in a year — a boundary, a format, an option rejected for a
+  durable reason — is written as an ADR instead, and vocabulary the interview had to pin down goes
+  to a glossary. It uses whatever convention the repo already has; if there is none, the directory
+  it would create is named at the approval step rather than appearing unannounced.
 - **Parallel waves.** One `executor` subagent per task, all dispatched together. Executors are
   forbidden from running git commands — concurrent ones would race on `.git/index.lock` — so the
   main loop commits each task sequentially instead. You keep `git revert <sha>` per task.
@@ -44,7 +52,7 @@ plan whose tree is dirty. Everywhere else it runs without checking in.
   fixes — otherwise the last round's own fixes ship unreviewed. The loop stops early once a
   review comes back clean, and at the cap it says plainly what is still unresolved rather than
   declaring victory.
-- **Resumable.** Run `/anvil` with no arguments after a session ends: it reads the per-task state
+- **Resumable.** Run `/anvil:anvil` with no arguments after a session ends: it reads the per-task state
   out of the plan file and picks up at the first unstarted task. A dirty tree is expected after a
   mid-wave failure, so resume asks what to do rather than refusing to run.
 

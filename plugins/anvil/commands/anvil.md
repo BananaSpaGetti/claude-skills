@@ -179,6 +179,36 @@ Appended as work happens: date, task, what happened.
 - more than 20 tasks — say so and offer to split into two plans
 - a wave wider than 4 — say so and offer to serialise part of it
 
+### Decisions that outlive the plan
+
+The plan file is a worklist. Once its tasks have landed it is spent, and a repo that keeps
+every spent worklist forever is one nobody reads. So a decision recorded **only** in the plan's
+`## Decisions` is a decision with an expiry date on it.
+
+Some of what the interview settled is not like that. A decision about how the system is shaped —
+a boundary, a format, a protocol, a convention, an option rejected for a reason that will still
+be true in a year — is worth reading long after this plan is gone, by someone deciding whether
+to undo it. Write those down separately:
+
+- **Where.** Use the convention the repo already has: `docs/decisions/`, `docs/adr/`,
+  `doc/adr/`, `adr/` — check for all of them before concluding there is none. Only when the repo
+  has no such directory does `docs/decisions/` become the proposal, and then it is a **new
+  top-level artifact in someone else's repository**, so it goes to the user at phase 4 rather
+  than being created quietly.
+- **What.** One file per decision, `NNNN-<kebab-slug>.md`, numbered after the highest that
+  already exists. State the context that forced a choice, the choice, the options rejected and
+  why, and the consequences accepted. Not what was built — *why* it is shaped this way.
+- **How many.** Most plans produce zero or one. A plan that produces an ADR per task is
+  recording tasks, not decisions.
+
+Do the same for **vocabulary**. When the interview had to pin down what a term means in this
+repo — because it was ambiguous, or the codebase used it two ways — that definition belongs in
+`docs/glossary.md`, or whatever glossary the repo already keeps. **Append to it; never rewrite
+it.** Terms you merely used correctly do not need an entry; only ones the interview had to settle.
+
+Both files are written in this phase, alongside the plan, and are committed with it. They are
+not deleted when the plan is.
+
 ## Phase 4 — Approve
 
 Show the user, short:
@@ -186,6 +216,9 @@ Show the user, short:
 - the task list, with each task's wave number
 - which tasks are marked `risk:` and will therefore **not** be delegated
 - anything you had to assume because the interview did not settle it
+- **any file or directory this run would create outside `.plans/`** — an ADR directory the repo
+  does not yet have, or a glossary that does not yet exist. Name the path. Creating a new
+  top-level convention in someone's repository is theirs to approve, not yours to assume.
 - the plan file path
 
 Then **stop and wait for a go.** On go, set `status: approved`, commit the plan

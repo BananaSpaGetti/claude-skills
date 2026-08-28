@@ -1,7 +1,7 @@
 {
   "name": "caveman",
-  "version": "0.1.0",
-  "description": "An output style that strips the padding out of Claude's replies. No \"I'll now\", no apology, no restating your question — one fact per line, numbers instead of adjectives. Code, commands, paths and error text stay byte-exact, and so does anything written to disk. Install, then pick Caveman in /output-style.",
+  "version": "0.1.1",
+  "description": "An output style that strips the padding out of Claude's replies. No \"I'll now\", no apology, no restating your question — one fact per line, numbers instead of adjectives. Code, commands, paths and error text stay byte-exact, and so does anything written to disk. Install, then pick caveman:Caveman in /config — plugin output styles are namespaced, and the picker moved out of /output-style.",
   "author": { "name": "BananaSpaGetti" },
   "license": "MIT",
   "homepage": "https://github.com/BananaSpaGetti/claude-skills"

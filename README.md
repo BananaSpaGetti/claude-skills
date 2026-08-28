@@ -109,8 +109,14 @@ optional, and stripping it needs saying explicitly.
 /plugin install caveman@claude-skills
 ```
 
-Then pick **Caveman** in `/output-style`. Installing it does not switch you to it —
-`force-for-plugin` is `false`, so your current style stays until you choose otherwise.
+Then pick **`caveman:Caveman`** in `/config`. Two details worth knowing, both read out of the
+CLI itself rather than assumed: a plugin's output styles are always namespaced `plugin:name`, so
+this one never collides with a style of your own called `Caveman`; and `/output-style` is a
+hidden command whose description is "Output style moved to /config", so `/config` is where the
+picker actually lives.
+
+Installing it does not switch you to it — `force-for-plugin` is `false`, so whatever style you
+are on stays selected until you pick this one.
 
 ## Repo layout
 

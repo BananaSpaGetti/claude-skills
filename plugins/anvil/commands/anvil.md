@@ -101,6 +101,13 @@ Rules:
   `research` skill, which runs in the background. Never block the round on an exploration — a
   running one is just an unsettled prerequisite, so only the questions downstream of it wait.
 - **Decisions are always the user's.** Put each one to them and wait.
+- **Challenge the decisions that arrived already made.** The request carries decisions the user
+  never put up for discussion. When the repo, the established facts, or a constraint show one of
+  them has a failure mode, put that failure mode into the round as its own question — a decision
+  that was never questioned is not the same as a decision that was settled. Challenge each one
+  **once**: if the user holds their line, it is settled, and it goes into the plan's Decisions
+  with their reason so no executor re-litigates it. This command ends in executed code, so an
+  interview that will not terminate is worse than one that was too polite.
 - The interview is done when the frontier is empty: every branch visited, nothing silently
   assumed.
 

@@ -87,16 +87,15 @@ Use it on your own single-player saves.
 ```
 CLAUDE.md                         orientation for an agent changing this repo
 .claude-plugin/marketplace.json   the marketplace manifest
-.plans/                           plan files written by `anvil`, one per run
 plugins/<name>/                   one directory per plugin
   .claude-plugin/plugin.json
   commands/ | agents/ | skills/
   evals/                          `anvil` only, so far — see below
-drafts/                           deliberately not in the marketplace
 ```
 
-`drafts/` holds two skills the marketplace does not list, so no installer ever sees them. They
-are the author's own, kept in the repo because that is where they are worked on.
+Everything in the repo is either a published plugin or documentation about one. An `anvil` run
+writes `.plans/<slug>.md` and commits it, but a finished plan is deleted once its work has
+landed — clone this and you get the plugins, not the author's spent worklists.
 
 `plugins/anvil/evals/` holds one case for `claude plugin eval`. That runner is in early access
 and prints `plugin eval is currently in early access` rather than running, so the suite has
@@ -116,11 +115,13 @@ The single home for what is and is not verified. Nothing else in this file makes
 - [x] `claude plugin validate` passes on the marketplace and all four plugins
 - [x] Installable from GitHub by name — `/plugin marketplace add BananaSpaGetti/claude-skills`
       then `/plugin install anvil@claude-skills`, both run for real on 2026-08-28
-- [x] `anvil` run on a real repo, start to finish. The first run (`.plans/anvil-self-test.md`)
-      went through all eight phases but was cut to one main-loop task at approval, so it proved
-      nothing about dispatch. The second run (`.plans/close-repo-gaps.md`) proved the rest: two
-      `executor` subagents dispatched concurrently in wave 1, wave 2 held until both were `done`,
-      a commit per task, and a later session resuming from per-task state on disk.
+- [x] `anvil` run on a real repo, start to finish, twice — on this one. Both runs are in the
+      history under `plan(<slug>)` commits; their plan files were deleted at close-out. The
+      first (`anvil-self-test`, `b218a09..2950089`) went through all eight phases but was cut to
+      one main-loop task at approval, so it proved nothing about dispatch. The second
+      (`close-repo-gaps`, `0de4b42..b829102`) proved the rest: two `executor` subagents
+      dispatched concurrently in wave 1, wave 2 held until both were `done`, a commit per task,
+      and a later session resuming from per-task state on disk.
 - [x] LICENSE confirmed — MIT, and each `plugin.json` now declares it
 - [ ] `anvil` has only ever run on this repository. How its dispatch behaves in someone else's
       tree is untested.

@@ -15,22 +15,25 @@ plugins for someone installing them; this file is for an agent changing the repo
 ```
 CLAUDE.md                         this file
 .claude-plugin/marketplace.json   the marketplace manifest — lists every plugin
-.plans/                           plan files written by the `anvil` command, one per run
 plugins/<name>/                   one directory per plugin
   .claude-plugin/plugin.json      that plugin's own manifest
   commands/ | agents/ | skills/   the plugin's content
   evals/                          `claude plugin eval` cases — `anvil` only, so far
-drafts/                           not published — see below
 ```
 
 Four plugins are listed in the marketplace manifest: `anvil`, `engineering-kit`, `council`,
 `game-save-re`. Each has an entry in `.claude-plugin/marketplace.json` with
-`source: "./plugins/<name>"`. None of them is *published* in the release sense — this repo has
-no remote, so nobody outside this machine can install them. `README.md` uses "published" that
-second way; do not read the two files as saying different things.
+`source: "./plugins/<name>"`. All four are published: the repo's remote is
+`github.com/BananaSpaGetti/claude-skills`, and a stranger installs them with
+`/plugin marketplace add BananaSpaGetti/claude-skills`.
 
 `README.md` carries its own layout tree for a reader installing the plugins. When you add or
 move a top-level directory, update both — they drifted once already.
+
+Nothing outside `plugins/` ships anything. The repo deliberately carries no scratch
+directories: an `anvil` run writes its plan to `.plans/<slug>.md` and commits it, but a
+finished plan is deleted once its work has landed — the commit history is the durable
+record, and a cloner should not be handed the author's spent worklists.
 
 ## Version consistency
 
@@ -60,15 +63,6 @@ claude plugin validate plugins/<name>
 The first checks the marketplace manifest and its consistency with each plugin; the
 second checks the plugin in isolation. A change that passes one but not the other is not
 done.
-
-## `drafts/`
-
-`drafts/thai-deliverable/` and `drafts/viral-promo-clip/` are deliberately not wired into
-`.claude-plugin/marketplace.json`. Do not add a marketplace entry for anything in
-`drafts/`, and do not move content out of `drafts/` into `plugins/`, without an explicit
-decision to publish it — this includes generalizing content that is currently
-Thai-language-specific. If you are asked to "finish" or "clean up" a draft, that is not
-by itself authorization to publish it.
 
 ## `plugins/engineering-kit/` is vendored third-party code
 

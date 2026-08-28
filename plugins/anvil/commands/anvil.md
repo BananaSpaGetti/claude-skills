@@ -104,10 +104,15 @@ Rules:
 - **Challenge the decisions that arrived already made.** The request carries decisions the user
   never put up for discussion. When the repo, the established facts, or a constraint show one of
   them has a failure mode, put that failure mode into the round as its own question — a decision
-  that was never questioned is not the same as a decision that was settled. Challenge each one
-  **once**: if the user holds their line, it is settled, and it goes into the plan's Decisions
-  with their reason so no executor re-litigates it. This command ends in executed code, so an
-  interview that will not terminate is worse than one that was too polite.
+  that was never questioned is not the same as a decision that was settled.
+- **Keep challenging while the evidence keeps coming.** A decision the user held once is not
+  immune: if a later round, a subagent's finding, or a fact you did not have then exposes a
+  different failure mode, raise it again. What you may not do is repeat an objection the user has
+  already answered — a re-challenge must carry evidence the user has not yet seen, or it is
+  nagging rather than grilling. The interview ends when the frontier is empty and nothing new is
+  arriving, not when a question count is reached; the user ends it earlier by approving in
+  phase 4. Record every decision they hold, with their reason, in the plan's Decisions so no
+  executor re-litigates it.
 - The interview is done when the frontier is empty: every branch visited, nothing silently
   assumed.
 

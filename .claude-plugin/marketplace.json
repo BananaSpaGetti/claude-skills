@@ -1,15 +1,15 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "claude-skills",
-  "description": "Small, composable Claude Code plugins: a one-command interview-plan-execute-review pipeline, six model-invoked engineering disciplines, an adversarial advisory council, and a game save-file reverse-engineering method.",
+  "description": "Small, composable Claude Code plugins: a one-command interview-plan-execute-review pipeline, an adversarial five-advisor council, vendored engineering-discipline skills, and a game save-file reverse-engineering method.",
   "owner": {
     "name": "BananaSpaGetti"
   },
   "plugins": [
     {
       "name": "anvil",
-      "version": "0.1.1",
-      "description": "One command for a large piece of work: interview as a design tree, write a plan into the repo, execute it through executor subagents in parallel waves with a commit per task, then loop the review until clean. Resumable across sessions - the plan file carries per-task state.",
+      "version": "0.1.2",
+      "description": "One command for a large piece of work. Run it as `/anvil:anvil <what you want built>`. It interviews you as a design tree, writes a plan into the repo, executes it through executor subagents in parallel waves, commits each task separately so any one can be reverted alone, and loops the review until it comes back clean. Run it with no arguments to resume an in-progress plan after a session ends.",
       "author": {
         "name": "BananaSpaGetti"
       },

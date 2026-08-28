@@ -3,26 +3,19 @@
 Small, composable plugins for [Claude Code](https://claude.com/claude-code). Each one is
 independent — install only the ones you want.
 
-> **Status: v0.1.0, not published yet.** `claude plugin validate` passes on the marketplace
-> manifest and on all four plugins, and `anvil` has been installed end to end from a
-> local-directory marketplace — but this repo has no remote, so nothing is installable by
-> anyone else. See [Before publishing](#before-publishing).
-
 ## Install
 
-There is no remote yet, so clone this repo and add it by path:
-
 ```
-/plugin marketplace add <path to your clone>
+/plugin marketplace add BananaSpaGetti/claude-skills
 /plugin install anvil@claude-skills
 ```
 
-Once the repo is pushed, the usual `/plugin marketplace add BananaSpaGetti/claude-skills` will
-work in place of the first line. What has actually been tested is the CLI equivalent of the two
-commands above — `claude plugin marketplace add <path>` and
-`claude plugin install anvil@claude-skills` — not the `/plugin` slash forms.
+Both commands were run for real on 2026-08-28: the marketplace cloned and validated, and `anvil`
+unpacked complete into `~/.claude/plugins/cache/claude-skills/anvil/`. Plugins load at session
+start, so restart Claude Code afterwards.
 
-Plugins load at session start, so restart Claude Code after installing.
+A plugin command is addressed as `<plugin>:<command>`, so this one is `/anvil:anvil`. A bare
+`/anvil` does not resolve to it.
 
 ## Plugins
 
@@ -99,35 +92,42 @@ plugins/<name>/                   one directory per plugin
   .claude-plugin/plugin.json
   commands/ | agents/ | skills/
   evals/                          `anvil` only, so far — see below
-drafts/                           not published yet — see below
+drafts/                           deliberately not in the marketplace
 ```
+
+`drafts/` holds two skills the marketplace does not list, so no installer ever sees them. They
+are the author's own, kept in the repo because that is where they are worked on.
 
 `plugins/anvil/evals/` holds one case for `claude plugin eval`. That runner is in early access
 and prints `plugin eval is currently in early access` rather than running, so the suite has
 never been executed — see [its README](./plugins/anvil/evals/README.md).
 
-**Open question.** This repo's `anvil` command is installed as `/anvil:anvil` in a session that
-also has a user-scope `/anvil` of its own; the two coexist and the user-scope one wins the bare
-name. Whether a bare `/anvil` resolves to the plugin for someone with *no* user-scope command of
-that name has not been tested, so the `/anvil:anvil` stutter is left as-is until it is.
+**Command name, decided 2026-08-28.** A bare `/anvil` does not resolve to the plugin — tested in
+a fresh session with no user-scope command of that name; only `/anvil:anvil` appears. The stutter
+is kept: every single-command plugin has it, and renaming would buy typography only. The name
+worth watching is the *plugin* half — `mulkatz/anvil` is a live Claude Code plugin that does
+adversarial structured debate, which is what this repo's `council` does. `name@marketplace`
+disambiguates installs. Revisit if an install is ever reported misrouted.
 
-## Before publishing
+## Known gaps
+
+The single home for what is and is not verified. Nothing else in this file makes status claims.
 
 - [x] `claude plugin validate` passes on the marketplace and all four plugins
-- [x] Test `/plugin marketplace add` against this repo end to end — `claude plugin marketplace
-      add <local path>` and `claude plugin install anvil@claude-skills` both succeeded, and the
-      plugin unpacked complete to `~/.claude/plugins/cache/claude-skills/anvil/0.1.0/`. Only the
-      local-directory form is proven; there is no remote to add by name yet.
-- [x] Run `/anvil` on a real repo, start to finish — the first run
-      (`.plans/anvil-self-test.md`) went through all eight phases, but was cut to one main-loop
-      task at approval, so it proved nothing about dispatch. The second run
-      (`.plans/close-repo-gaps.md`) proved the rest separately: two `executor` subagents
-      dispatched concurrently in wave 1, wave 2 held until both were `done`, a commit per task,
-      and resume reconstructing per-task state from the plan file on disk in a later session.
-- [ ] `council.workflow.js` is syntax-checked only — run it once for real
-- [ ] Decide whether `drafts/thai-deliverable` and `drafts/viral-promo-clip` ship, and
-      genericise them if so (both are currently written for a Thai-language audience)
-- [ ] Confirm the LICENSE choice
+- [x] Installable from GitHub by name — `/plugin marketplace add BananaSpaGetti/claude-skills`
+      then `/plugin install anvil@claude-skills`, both run for real on 2026-08-28
+- [x] `anvil` run on a real repo, start to finish. The first run (`.plans/anvil-self-test.md`)
+      went through all eight phases but was cut to one main-loop task at approval, so it proved
+      nothing about dispatch. The second run (`.plans/close-repo-gaps.md`) proved the rest: two
+      `executor` subagents dispatched concurrently in wave 1, wave 2 held until both were `done`,
+      a commit per task, and a later session resuming from per-task state on disk.
+- [x] LICENSE confirmed — MIT, and each `plugin.json` now declares it
+- [ ] `anvil` has only ever run on this repository. How its dispatch behaves in someone else's
+      tree is untested.
+- [ ] `council.workflow.js` has been run once, from the author's user-scope copy. The published
+      copy resolves its script through `${CLAUDE_PLUGIN_ROOT}` and that path has not been exercised.
+- [ ] The eval suite has never been executed — `claude plugin eval` is in early access and prints
+      a notice instead of running.
 
 ## License
 

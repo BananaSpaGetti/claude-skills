@@ -4,5 +4,6 @@
   "description": "Nine model-invoked engineering disciplines the agent reaches for on its own: a diagnosis loop for hard bugs, test-driven development, throwaway prototyping, background research against primary sources, domain modelling with CONTEXT.md and ADRs, deep-module design vocabulary, merge-conflict resolution, interactive setup wizards, and writing documents for agents. Derived from Matt Pocock's skills repository under MIT - see NOTICE.",
   "author": {
     "name": "BananaSpaGetti"
-  }
+  },
+  "license": "MIT"
 }

@@ -117,8 +117,9 @@ plugins/<name>/                   one directory per plugin
 ```
 
 Everything in the repo is either a published plugin or documentation about one. An `anvil` run
-writes `.plans/<slug>.md` and commits it, but a finished plan is deleted once its work has
-landed — clone this and you get the plugins, not the author's spent worklists.
+writes `.plans/<slug>.md` and commits it; this repo then deletes that file by hand once the work
+has landed, so cloning it gets you the plugins and not the author's spent worklists. The
+deletion is this repo's housekeeping — `anvil` itself never removes a plan.
 
 `plugins/anvil/evals/` holds one case for `claude plugin eval`. That runner is in early access
 and prints `plugin eval is currently in early access` rather than running, so the suite has

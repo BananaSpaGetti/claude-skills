@@ -31,10 +31,12 @@ Five plugins are listed in the marketplace manifest: `anvil`, `engineering-kit`,
 `README.md` carries its own layout tree for a reader installing the plugins. When you add or
 move a top-level directory, update both — they drifted once already.
 
-Nothing outside `plugins/` ships anything. The repo deliberately carries no scratch
-directories: an `anvil` run writes its plan to `.plans/<slug>.md` and commits it, but a
-finished plan is deleted once its work has landed — the commit history is the durable
-record, and a cloner should not be handed the author's spent worklists.
+Nothing outside `plugins/` ships anything. An `anvil` run writes its plan to
+`.plans/<slug>.md` and commits it; **this repo** then deletes that file by hand once the
+work has landed, because a cloner should not be handed the author's spent worklists and the
+`plan(<slug>)` commits are the durable record. That is a housekeeping habit of this
+repository, not a behaviour of the tool — `anvil` never deletes a plan file, and phase 7
+must not be changed to make it do so without an explicit decision.
 
 ## Version consistency
 

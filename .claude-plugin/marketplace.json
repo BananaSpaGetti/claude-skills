@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "claude-skills",
-  "description": "Small, composable Claude Code plugins: a one-command interview-plan-execute-review pipeline, an adversarial five-advisor council, vendored engineering-discipline skills, and a game save-file reverse-engineering method.",
+  "description": "Small, composable Claude Code plugins: a one-command interview-plan-execute-review pipeline, an adversarial five-advisor council, vendored engineering-discipline skills, a game save-file reverse-engineering method, and an output style that strips the padding out of replies.",
   "owner": {
     "name": "BananaSpaGetti"
   },
@@ -25,6 +25,16 @@
       },
       "category": "development",
       "source": "./plugins/engineering-kit"
+    },
+    {
+      "name": "caveman",
+      "version": "0.1.0",
+      "description": "An output style that strips the padding out of Claude's replies. No \"I'll now\", no apology, no restating your question - one fact per line, numbers instead of adjectives. Code, commands, paths and error text stay byte-exact, and so does anything written to disk. Install, then pick Caveman in /output-style.",
+      "author": {
+        "name": "BananaSpaGetti"
+      },
+      "category": "productivity",
+      "source": "./plugins/caveman"
     },
     {
       "name": "council",

@@ -82,6 +82,28 @@ then verify in-game. Engine-agnostic — Unity, Godot, Ren'Py, RPG Maker, custom
 
 Use it on your own single-player saves.
 
+### `caveman` — replies with the padding taken out
+
+An output style, not a command. No "I'll now", no apology, no restating the question back at
+you; one fact per line, and numbers where an adjective would have gone — `3/3 pass`, not "all
+tests are passing nicely". `auth.py:42` is a reference you can click, "the auth module" is not.
+
+What it deliberately does not compress: code, shell commands, paths, URLs, flags, identifiers,
+and error text quoted from real output, which all stay byte-exact. Nor does terseness become
+silence — a failed step, a skipped step, and a warning before something irreversible are all
+stated in full. The register is for talking to you; files it writes for you, including commit
+messages and docs, stay ordinary professional English.
+
+It carries a Thai section too, because politeness padding there is grammatical rather than
+optional, and stripping it needs saying explicitly.
+
+```
+/plugin install caveman@claude-skills
+```
+
+Then pick **Caveman** in `/output-style`. Installing it does not switch you to it —
+`force-for-plugin` is `false`, so your current style stays until you choose otherwise.
+
 ## Repo layout
 
 ```
@@ -90,6 +112,7 @@ CLAUDE.md                         orientation for an agent changing this repo
 plugins/<name>/                   one directory per plugin
   .claude-plugin/plugin.json
   commands/ | agents/ | skills/
+  output-styles/                  `caveman` only, so far
   evals/                          `anvil` only, so far — see below
 ```
 
@@ -112,7 +135,7 @@ disambiguates installs. Revisit if an install is ever reported misrouted.
 
 The single home for what is and is not verified. Nothing else in this file makes status claims.
 
-- [x] `claude plugin validate` passes on the marketplace and all four plugins
+- [x] `claude plugin validate` passes on the marketplace and all five plugins
 - [x] Installable from GitHub by name — `/plugin marketplace add BananaSpaGetti/claude-skills`
       then `/plugin install anvil@claude-skills`, both run for real on 2026-08-28
 - [x] `anvil` run on a real repo, start to finish, twice — on this one. Both runs are in the

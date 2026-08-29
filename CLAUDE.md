@@ -19,11 +19,13 @@ plugins/<name>/                   one directory per plugin
   .claude-plugin/plugin.json      that plugin's own manifest
   commands/ | agents/ | skills/   the plugin's content
   output-styles/                  reply-register styles — `caveman` only, so far
-  evals/                          `claude plugin eval` cases — `anvil` only, so far
+  evals/                          `claude plugin eval` cases — `patimakorn` only, so far
 ```
 
-Five plugins are listed in the marketplace manifest: `anvil`, `engineering-kit`, `caveman`,
-`council`, `game-save-re`. Each has an entry in `.claude-plugin/marketplace.json` with
+Five plugins are listed in the marketplace manifest: `patimakorn`, `engineering-kit`,
+`caveman`, `council`, `game-save-re`. `patimakorn` is the plugin whose one command is `anvil`,
+so the command is `/patimakorn:anvil`; the plugin was itself called `anvil` until 2026-08-30 and
+older commits use that name throughout. Each has an entry in `.claude-plugin/marketplace.json` with
 `source: "./plugins/<name>"`. All five are published: the repo's remote is
 `github.com/BananaSpaGetti/claude-skills`, and a stranger installs them with
 `/plugin marketplace add BananaSpaGetti/claude-skills`.

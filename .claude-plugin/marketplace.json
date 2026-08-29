@@ -7,19 +7,19 @@
   },
   "plugins": [
     {
-      "name": "anvil",
-      "version": "0.1.3",
-      "description": "One command for a large piece of work. Run it as `/anvil:anvil <what you want built>`. It interviews you as a design tree, writes a plan into the repo, executes it through executor subagents in parallel waves, commits each task separately so any one can be reverted alone, and loops the review until it comes back clean. The interview argues with the decisions you arrived holding, and writes the ones that outlive the plan out as ADRs so they survive the worklist. Run it with no arguments to resume an in-progress plan after a session ends.",
+      "name": "patimakorn",
+      "version": "0.2.0",
+      "description": "One command for a large piece of work. Run it as `/patimakorn:anvil <what you want built>`. It interviews you as a design tree, writes a plan into the repo, executes it through executor subagents in parallel waves, commits each task separately so any one can be reverted alone, and loops the review until it comes back clean. The interview argues with the decisions you arrived holding, and writes the ones that outlive the plan out as ADRs so they survive the worklist. Run it with no arguments to resume an in-progress plan after a session ends.",
       "author": {
         "name": "BananaSpaGetti"
       },
       "category": "workflow",
-      "source": "./plugins/anvil"
+      "source": "./plugins/patimakorn"
     },
     {
       "name": "engineering-kit",
       "version": "0.2.0",
-      "description": "Nine model-invoked engineering disciplines the agent reaches for on its own: diagnosing-bugs, tdd, prototype, research, domain-modeling, codebase-design, resolving-merge-conflicts, wizard, writing-for-agents. Pairs with the anvil plugin, which uses them when they are installed. Derived from Matt Pocock's skills repository under MIT - see the plugin's NOTICE.",
+      "description": "Nine model-invoked engineering disciplines the agent reaches for on its own: diagnosing-bugs, tdd, prototype, research, domain-modeling, codebase-design, resolving-merge-conflicts, wizard, writing-for-agents. Pairs with the patimakorn plugin, which uses them when they are installed. Derived from Matt Pocock's skills repository under MIT - see the plugin's NOTICE.",
       "author": {
         "name": "BananaSpaGetti"
       },

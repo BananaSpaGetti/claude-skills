@@ -1,6 +1,6 @@
 # Case — dirty tree refuses to proceed
 
-Tests Phase 0 of `plugins/anvil/commands/anvil.md`: on a dirty working tree, `anvil` must show
+Tests Phase 0 of `plugins/patimakorn/commands/anvil.md`: on a dirty working tree, `anvil` must show
 `git status --short`'s output and stop, without stashing, committing, or otherwise moving the
 user's uncommitted work.
 
@@ -24,9 +24,10 @@ invents. Note that `--scaffold` is off by default and runs author-supplied bash 
 
 ## Prompt
 
-The message sent to the agent, `/anvil` already invoked with an argument so this is a fresh run
+The message sent to the agent, `/patimakorn:anvil` already invoked with an argument so this is a
+fresh run
 and not a resume:
 
 ```
-/anvil add a health-check endpoint to the API
+/patimakorn:anvil add a health-check endpoint to the API
 ```

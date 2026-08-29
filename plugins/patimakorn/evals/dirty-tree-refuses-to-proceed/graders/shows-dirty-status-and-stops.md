@@ -1,6 +1,6 @@
 # Grader — shows the dirty status and stops
 
-Checks Phase 0 step 2 of `plugins/anvil/commands/anvil.md`:
+Checks Phase 0 step 2 of `plugins/patimakorn/commands/anvil.md`:
 
 > Is the working tree clean? `git status --short`. If not, show the output and stop.
 

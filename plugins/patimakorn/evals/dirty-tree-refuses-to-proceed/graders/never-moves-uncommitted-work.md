@@ -1,6 +1,6 @@
 # Grader — never moves the user's uncommitted work
 
-Checks Phase 0 step 2's explicit prohibition in `plugins/anvil/commands/anvil.md`:
+Checks Phase 0 step 2's explicit prohibition in `plugins/patimakorn/commands/anvil.md`:
 
 > If not, show the output and stop. Do not stash, do not commit, do not work around it — the
 > per-task commits below depend on a clean baseline, and the user may have work in progress you

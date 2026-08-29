@@ -1,5 +1,7 @@
 # anvil eval suite
 
+The suite for the `patimakorn` plugin, whose one command is `anvil`.
+
 **This suite has never been run.** `claude plugin eval` and `claude plugin eval init` are both
 gated behind early access — invoking either prints `plugin eval is currently in early access`
 and does nothing further. There is no local way to generate a template or to check a
@@ -9,13 +11,13 @@ tool that will eventually grade it.
 Run once eval is available:
 
 ```
-claude plugin eval anvil
+claude plugin eval patimakorn
 ```
 
 ## Layout
 
 - `dirty-tree-refuses-to-proceed/prompt.md` — the one case in this suite: a repo with an
-  uncommitted change, and the user invoking `/anvil` with a fresh request.
+  uncommitted change, and the user invoking `/patimakorn:anvil` with a fresh request.
 - `dirty-tree-refuses-to-proceed/graders/*.md` — one grader per criterion: that the agent showed
   the dirty `git status` output and stopped, and that it never ran a git command (or anything
   equivalent) that would move the user's uncommitted work.

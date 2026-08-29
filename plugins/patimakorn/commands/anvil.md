@@ -239,7 +239,9 @@ For each wave:
      `.bak` first, and confirm the program that owns the file is not running)
    - anything whose `verify:` is "look at it and judge"
 
-3. Dispatch the rest as one `executor` subagent per task (`subagent_type: "executor"`), **all in
+3. Dispatch the rest as one `executor` subagent per task
+   (`subagent_type: "patimakorn:executor"` — the namespaced form, because a bare
+   `executor` is shadowed by any agent of that name the user has of their own), **all in
    a single message so they run concurrently.**
 
    Each executor prompt is self-contained — it sees nothing but the text you send:

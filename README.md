@@ -7,23 +7,24 @@ independent — install only the ones you want.
 
 ```
 /plugin marketplace add BananaSpaGetti/claude-skills
-/plugin install anvil@claude-skills
+/plugin install patimakorn@claude-skills
 ```
 
-Both commands were run for real on 2026-08-28: the marketplace cloned and validated, and `anvil`
-unpacked complete into `~/.claude/plugins/cache/claude-skills/anvil/`. Plugins load at session
-start, so restart Claude Code afterwards.
+Both commands were run for real on 2026-08-28 (under the plugin's former name): the marketplace
+cloned and validated, and the plugin unpacked complete into
+`~/.claude/plugins/cache/claude-skills/`. Plugins load at session start, so restart Claude Code
+afterwards.
 
-A plugin command is addressed as `<plugin>:<command>`, so this one is `/anvil:anvil`. A bare
-`/anvil` does not resolve to it.
+A plugin command is addressed as `<plugin>:<command>`, so the command below is
+`/patimakorn:anvil`. A bare `/anvil` does not resolve to it.
 
 ## Plugins
 
-### `anvil` — one command for a large piece of work
+### `patimakorn` — `anvil`, one command for a large piece of work
 
 ```
-/anvil:anvil <what you want built>   start
-/anvil:anvil                         resume an in-progress plan
+/patimakorn:anvil <what you want built>   start
+/patimakorn:anvil                        resume an in-progress plan
 ```
 
 Eight phases in one conversation: preflight, orient, interview, plan, approve, execute, review,
@@ -52,7 +53,7 @@ plan whose tree is dirty. Everywhere else it runs without checking in.
   fixes — otherwise the last round's own fixes ship unreviewed. The loop stops early once a
   review comes back clean, and at the cap it says plainly what is still unresolved rather than
   declaring victory.
-- **Resumable.** Run `/anvil:anvil` with no arguments after a session ends: it reads the per-task state
+- **Resumable.** Run `/patimakorn:anvil` with no arguments after a session ends: it reads the per-task state
   out of the plan file and picks up at the first unstarted task. A dirty tree is expected after a
   mid-wave failure, so resume asks what to do rather than refusing to run.
 
@@ -127,7 +128,7 @@ plugins/<name>/                   one directory per plugin
   .claude-plugin/plugin.json
   commands/ | agents/ | skills/
   output-styles/                  `caveman` only, so far
-  evals/                          `anvil` only, so far — see below
+  evals/                          `patimakorn` only, so far — see below
 ```
 
 Everything in the repo is either a published plugin or documentation about one. An `anvil` run
@@ -135,16 +136,21 @@ writes `.plans/<slug>.md` and commits it; this repo then deletes that file by ha
 has landed, so cloning it gets you the plugins and not the author's spent worklists. The
 deletion is this repo's housekeeping — `anvil` itself never removes a plan.
 
-`plugins/anvil/evals/` holds one case for `claude plugin eval`. That runner is in early access
+`plugins/patimakorn/evals/` holds one case for `claude plugin eval`. That runner is in early access
 and prints `plugin eval is currently in early access` rather than running, so the suite has
-never been executed — see [its README](./plugins/anvil/evals/README.md).
+never been executed — see [its README](./plugins/patimakorn/evals/README.md).
 
-**Command name, decided 2026-08-28.** A bare `/anvil` does not resolve to the plugin — tested in
-a fresh session with no user-scope command of that name; only `/anvil:anvil` appears. The stutter
-is kept: every single-command plugin has it, and renaming would buy typography only. The name
-worth watching is the *plugin* half — `mulkatz/anvil` is a live Claude Code plugin that does
-adversarial structured debate, which is what this repo's `council` does. `name@marketplace`
-disambiguates installs. Revisit if an install is ever reported misrouted.
+**Command name, decided 2026-08-30, replacing the 2026-08-28 decision to keep the stutter.** The
+plugin was called `anvil` and so was its only command, which was addressed as `/anvil:anvil`. It is
+now `patimakorn`, so the command is `/patimakorn:anvil` — the tool keeps the name it earned and
+the prefix stops repeating it. Renaming also ends a collision worth naming: `mulkatz/anvil` is a
+live Claude Code plugin doing adversarial structured debate, which is what this repo's `council`
+does, and only the author had installed this one, so the rename cost nothing.
+
+The trade is real and was made knowingly: a prefix that says who wrote it tells a stranger less
+than one that says what it does, and the other four plugins here are still named for their job.
+`BananaSpaGetti` was tried first and rejected — `claude plugin validate` accepts it, but warns
+that the Claude.ai marketplace sync requires kebab-case, so the lowercase form is what ships.
 
 ## Known gaps
 
@@ -152,7 +158,8 @@ The single home for what is and is not verified. Nothing else in this file makes
 
 - [x] `claude plugin validate` passes on the marketplace and all five plugins
 - [x] Installable from GitHub by name — `/plugin marketplace add BananaSpaGetti/claude-skills`
-      then `/plugin install anvil@claude-skills`, both run for real on 2026-08-28
+      then `/plugin install patimakorn@claude-skills` (installed under its former name on
+      2026-08-28, reinstalled under the new one on 2026-08-30)
 - [x] `anvil` run on a real repo, start to finish, twice — on this one. Both runs are in the
       history under `plan(<slug>)` commits; their plan files were deleted at close-out. The
       first (`anvil-self-test`, `b218a09..2950089`) went through all eight phases but was cut to

@@ -10,10 +10,12 @@ independent — install only the ones you want.
 /plugin install patimakorn@claude-skills
 ```
 
-Both commands were run for real on 2026-08-28 (under the plugin's former name): the marketplace
-cloned and validated, and the plugin unpacked complete into
-`~/.claude/plugins/cache/claude-skills/`. Plugins load at session start, so restart Claude Code
-afterwards.
+**The repository is private as of 2026-09-03, so those commands work only for its owner.** They
+were run for real on 2026-08-28 (under the plugin's former name) and again on 2026-08-30: the
+marketplace cloned and validated, and the plugin unpacked complete into
+`~/.claude/plugins/cache/claude-skills/`. Both runs were authenticated as the owner, which is
+not the same test as a stranger's, and the difference is tracked in Known gaps below. Plugins
+load at session start, so restart Claude Code afterwards.
 
 A plugin command is addressed as `<plugin>:<command>`, so the command below is
 `/patimakorn:anvil`. A bare `/anvil` does not resolve to it.
@@ -25,6 +27,8 @@ A plugin command is addressed as `<plugin>:<command>`, so the command below is
 ```
 /patimakorn:anvil <what you want built>   start
 /patimakorn:anvil                        resume an in-progress plan
+
+/patimakorn:anvil2 <what you want built>  the same, with delegation made mandatory — see below
 ```
 
 Eight phases in one conversation: preflight, orient, interview, plan, approve, execute, review,
@@ -49,6 +53,8 @@ plan whose tree is dirty. Everywhere else it runs without checking in.
 - **Parallel waves.** One `executor` subagent per task, all dispatched together. Executors are
   forbidden from running git commands — concurrent ones would race on `.git/index.lock` — so the
   main loop commits each task sequentially instead. You keep `git revert <sha>` per task.
+  **This is what `anvil` instructs, not reliably what it does** — see Known gaps, and `anvil2`
+  below.
 - **Review loop, capped at 3 fixing rounds**, then one closing pass that reports rather than
   fixes — otherwise the last round's own fixes ship unreviewed. The loop stops early once a
   review comes back clean, and at the cap it says plainly what is still unresolved rather than
@@ -59,6 +65,33 @@ plan whose tree is dirty. Everywhere else it runs without checking in.
 
 Some work is deliberately *not* delegated: anything the plan marks `risk: destructive`,
 `risk: binary-format`, or `risk: judgement-call` stays in the main conversation.
+
+#### `anvil2` — the same eight phases, with two rules under test
+
+`anvil` treats delegation as advice, and a four-day run measured what that costs. Across three
+plans and 23 tasks — 22 of them `risk: none`, so all 22 were eligible — it dispatched one
+executor. The other 313 tool calls ran in the main conversation, where each one both adds a turn
+and leaves its result in context for every later turn. Context climbed from 72k to 556k tokens.
+Phase 1's "dispatch subagents for anything broad" ran zero times.
+
+Part of why: only `patimakorn:executor` pins a model in its frontmatter. `Explore` and
+`general-purpose` pin nothing, so they inherit whatever model the session is on. Of fifteen
+subagent transcripts in that run, exactly one ran on the small model, and three summarization
+agents that inherited the session model cost more than all eleven review finders combined.
+
+So `anvil2` is `anvil` plus two rules:
+
+- **Every dispatch names its model.** A table maps each kind of dispatch to one: retrieval and
+  summarization go to `sonnet`; research whose answer turns on source quality, and the phase 6
+  review finders, keep the session model deliberately — those finders returned fifteen confirmed
+  findings per round for under 8% of that run's cost, and the table says not to trade them down.
+- **Delegation is the default.** Phase 5's exemption list is exhaustive, a one-task wave is still
+  a dispatch, phase 1 has a dispatch floor, skipping a dispatch the rules call for requires a
+  stated reason, and phase 7 reports the delegated / main-loop split so a run that ignored all of
+  this is visible in its own report.
+
+Both commands ship so the change can be compared against the original. `anvil2` has not yet been
+run — see Known gaps.
 
 ### `engineering-kit` — nine disciplines the agent reaches for on its own
 
@@ -157,9 +190,11 @@ that the Claude.ai marketplace sync requires kebab-case, so the lowercase form i
 The single home for what is and is not verified. Nothing else in this file makes status claims.
 
 - [x] `claude plugin validate` passes on the marketplace and all five plugins
-- [x] Installable from GitHub by name — `/plugin marketplace add BananaSpaGetti/claude-skills`
-      then `/plugin install patimakorn@claude-skills` (installed under its former name on
-      2026-08-28, reinstalled under the new one on 2026-08-30)
+- [ ] **The repository is private.** No stranger has installed anything here. The install above
+      was run twice by the owner while authenticated — under the plugin's former name on
+      2026-08-28 and under the current one on 2026-08-30 — which proves the manifest resolves and
+      the plugin unpacks, and proves nothing about anonymous access. This box gets ticked after
+      the repo is public *and* the install is repeated from a logged-out client, not before.
 - [x] `anvil` run on a real repo, start to finish, twice — on this one. Both runs are in the
       history under `plan(<slug>)` commits; their plan files were deleted at close-out. The
       first (`anvil-self-test`, `b218a09..2950089`) went through all eight phases but was cut to
@@ -168,8 +203,17 @@ The single home for what is and is not verified. Nothing else in this file makes
       dispatched concurrently in wave 1, wave 2 held until both were `done`, a commit per task,
       and a later session resuming from per-task state on disk.
 - [x] LICENSE confirmed — MIT, and each `plugin.json` now declares it
-- [ ] `anvil` has only ever run on this repository. How its dispatch behaves in someone else's
-      tree is untested.
+- [x] `anvil` run on a repository that is not this one — a Kaggle competition repo, 2026-08-29 to
+      2026-09-02, three plans and 23 tasks end to end. All eight phases ran, the plan file drove a
+      commit per task across 24 `plan(<slug>)` commits, resume worked across a three-day gap, and
+      the review loop returned fifteen confirmed findings per round on real numerical code.
+- [ ] **`anvil` does not reliably delegate, and that is the open defect.** In the run above it
+      dispatched one executor for 22 eligible tasks and ran phase 1's exploration zero times,
+      doing 313 tool calls in the main conversation instead; context reached 556k tokens. The
+      command's text says to delegate, so this is a case of instructions that do not bind rather
+      than a missing feature. `anvil2` is the attempt to make them bind.
+- [ ] `anvil2` has never been run. Its two rules are written and validated but unexercised, and
+      the number that decides whether they worked is phase 7's delegated / main-loop split.
 - [ ] `council.workflow.js` has been run once, from the author's user-scope copy. The published
       copy resolves its script through `${CLAUDE_PLUGIN_ROOT}` and that path has not been exercised.
 - [ ] The eval suite has never been executed — `claude plugin eval` is in early access and prints

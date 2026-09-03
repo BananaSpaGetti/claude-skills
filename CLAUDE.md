@@ -23,12 +23,16 @@ plugins/<name>/                   one directory per plugin
 ```
 
 Five plugins are listed in the marketplace manifest: `patimakorn`, `engineering-kit`,
-`caveman`, `council`, `game-save-re`. `patimakorn` is the plugin whose one command is `anvil`,
-so the command is `/patimakorn:anvil`; the plugin was itself called `anvil` until 2026-08-30 and
-older commits use that name throughout. Each has an entry in `.claude-plugin/marketplace.json` with
-`source: "./plugins/<name>"`. All five are published: the repo's remote is
-`github.com/BananaSpaGetti/claude-skills`, and a stranger installs them with
-`/plugin marketplace add BananaSpaGetti/claude-skills`.
+`caveman`, `council`, `game-save-re`. `patimakorn` holds two commands, `anvil` and `anvil2`, so
+they are addressed as `/patimakorn:anvil` and `/patimakorn:anvil2`; the plugin was itself called
+`anvil` until 2026-08-30 and older commits use that name throughout. Each has an entry in
+`.claude-plugin/marketplace.json` with `source: "./plugins/<name>"`.
+
+**The repository is private as of 2026-09-03.** The remote is
+`github.com/BananaSpaGetti/claude-skills` and `/plugin marketplace add BananaSpaGetti/claude-skills`
+resolves for the owner, who is authenticated; no stranger can install anything here yet. Do not
+write "published" or "a stranger installs them" anywhere in this repo until that changes and an
+anonymous install has actually been tried — README's Known gaps tracks it.
 
 `README.md` carries its own layout tree for a reader installing the plugins. When you add or
 move a top-level directory, update both — they drifted once already.

@@ -1,11 +1,16 @@
 ---
-description: Run a large piece of work end to end — interview, plan, execute in parallel waves with a commit per task, then review in a loop until clean. Delegation is mandatory and every dispatch names its own model.
+description: Run a large piece of work end to end — interview, plan, then execute through a script that dispatches one executor per task, commits each separately, and loops the review until clean. Delegation is enforced in code, not asked for in prose.
 argument-hint: [what you want built] (or leave empty to resume an in-progress plan)
 ---
 
 One command, eight phases, one conversation. It interviews you, writes a plan into the repo,
-executes it through subagents wave by wave, commits each task separately, and loops the review
-until it comes back clean.
+hands the plan to a script that runs every task on its own executor subagent, commits each task
+separately, and loops the review until it comes back clean.
+
+The script is the difference between this and `/patimakorn:anvil`. There, phase 5's dispatch was
+an instruction; a four-day run obeyed it once in twenty-two chances and its context reached 556k
+tokens doing the work inline instead. Here the dispatch is `plugins/patimakorn/workflows/execute.workflow.js`,
+and there is no code path in which this conversation does a delegable task itself.
 
 **Running this command is your authorisation to dispatch agents.** Do not ask again before each
 one. Two places still stop and wait for the user: the interview rounds (phase 2) and the single
@@ -65,11 +70,12 @@ later turn, because the result stays in context for the rest of the run. A subag
 and returns a summary. That is why the phases below dispatch — the parallelism is a bonus, the
 context ceiling is the point.
 
-So: **whenever a phase says to dispatch, dispatch.** Phase 5 step 2 lists the only tasks that
-stay in the main loop, and that list is exhaustive — a task that does not match it is delegated
-even when its wave is one task wide. If you decide against a dispatch the rules call for, say so
-in the conversation with the reason, in one line, before proceeding. Silently absorbing the work
-is the failure this command exists to prevent.
+So: **whenever a phase says to dispatch, dispatch.** If you decide against a dispatch the rules
+call for, say so in the conversation with the reason, in one line, before proceeding. Silently
+absorbing the work is the failure this command exists to prevent.
+
+In phase 5 this is not left to your judgement at all: the dispatch is done by a **script**, and
+the script is the only thing that can perform a task. See below.
 
 ---
 
@@ -281,66 +287,118 @@ Then **stop and wait for a go.** On go, set `status: approved`, commit the plan
 
 ## Phase 5 — Execute
 
-Group tasks into **waves**: every task whose `blocked-by` tasks are all `done` belongs to the
-current wave.
+**The dispatch in this phase is done by a script, not by you.** That is the whole point of
+`anvil2`: in `anvil` the same instruction was prose, and a four-day run followed it once in
+twenty-two chances. A rule you can forget is not a rule. The only code path that performs a task
+is the script's `agent()` call, so there is no branch in which this conversation does the work
+instead.
 
-For each wave:
+### 1. Split the tasks
 
-1. Set every task in the wave to `state: doing` in the plan file.
+Take every task whose `blocked-by` tasks are all `done`, plus everything downstream of them —
+the script schedules the ordering itself, so you do not need to compute waves.
 
-2. **Do these yourself, in this conversation — never delegate. This list is exhaustive:**
-   - any task with `risk: destructive`, `risk: binary-format`, or `risk: judgement-call`
-   - anything editing a checksummed, length-prefixed, or binary format (take the timestamped
-     `.bak` first, and confirm the program that owns the file is not running)
-   - anything whose `verify:` is "look at it and judge"
+Sort them into two piles:
 
-   Nothing else qualifies. A task is not exempt for being small, for being quick to do inline,
-   for being the only task in its wave, or for having a `verify:` that needs a credential or a
-   long-running external job — in that last case the executor makes the change and **you** run
-   the `verify:` in step 4, which is where verification already lives.
+**Stays in this conversation.** This list is exhaustive:
+- any task with `risk: destructive`, `risk: binary-format`, or `risk: judgement-call`
+- anything editing a checksummed, length-prefixed, or binary format (take the timestamped `.bak`
+  first, and confirm the program that owns the file is not running)
+- anything whose `verify:` is "look at it and judge"
 
-3. Dispatch **every remaining task** as one `executor` subagent per task
-   (`subagent_type: "patimakorn:executor"` — the namespaced form, because a bare
-   `executor` is shadowed by any agent of that name the user has of their own), **all in
-   a single message so they run concurrently.** Pass no `model`: the agent's frontmatter pins
-   `model: sonnet`, and a `model` here would override it (Rule 1).
+Nothing else qualifies. A task is not exempt for being small, for being quick to do inline, for
+being the only one left, or for having a `verify:` that needs a credential or a long-running
+external job — in that last case the executor still makes the change and **you** run the
+`verify:` in step 3, which is where verification already lives.
 
-   A wave of one task is still a dispatch. The gain is not only the parallelism — it is that the
-   task's file reads, edits and false starts never enter this conversation.
+**Goes to the script.** Everything else. The script rejects the whole run if a task carrying a
+risk marker reaches it, so mis-sorting fails loudly rather than quietly running a destructive
+task on a subagent.
 
-   If you are about to do a `risk: none` task yourself, stop and say why in one line first. The
-   only answer that holds is that it matches step 2's list, and step 2's list is exhaustive.
+Set every task being started to `state: doing` in the plan file.
 
-   Each executor prompt is self-contained — it sees nothing but the text you send:
-   - the plan's **Goal** and **Context** sections, verbatim
-   - that one task: `change`, `done-when`, `verify`
-   - the paths it may touch, and the instruction to touch nothing else
-   - if the task's `verify:` names a test that does not exist yet, tell the executor to use the
-     `tdd` skill and write the failing test first
-   - **"Do not run `git commit`, `git add`, or any other git write command."**
-     Concurrent executors would race on `.git/index.lock`. Committing is the main loop's job.
+### 2. Run the script
 
-4. When the wave returns, **run each task's `verify:` yourself** and report the real output. An
-   executor claiming success is not evidence.
+```
+Workflow({
+  scriptPath: "${CLAUDE_PLUGIN_ROOT}/workflows/execute.workflow.js",
+  args: {
+    slug:    "<the plan's slug>",
+    goal:    "<the plan's Goal section, verbatim>",
+    context: "<the plan's Context section, verbatim>",
+    tasks: [
+      {
+        id: 1,
+        title: "...",
+        change: "...",
+        doneWhen: "...",
+        verify: "...",
+        paths: ["src/foo.py"],       // omit if the task does not name specific paths
+        blockedBy: [],               // ids, as in the plan's blocked-by
+        risk: "none",
+        needsFailingTest: false      // true when verify: names a test that does not exist yet
+      }
+    ]
+  }
+})
+```
 
-5. **Commit sequentially, one task at a time**, in task order:
+Running this command **is** the opt-in to multi-agent orchestration — invoke the workflow without
+asking again. It runs in the background and a task notification arrives when it finishes; do not
+poll for it, and do not invent its result while it is pending.
 
-   ```
-   git add <that task's files>
-   git commit -m "plan(<slug>) task <N>: <title>"
-   ```
+The script cannot read the filesystem, so everything it needs is in `args` — this is why you pass
+`goal` and `context` verbatim rather than a path to the plan. Anything the interview settled that
+does not reach `args` is invisible to every executor.
 
-   Write the resulting sha into that task's `commit:` field and set `state: done`. Append a Log
-   line. Commit the plan-file update itself as `plan(<slug>): task <N> done`.
+If `${CLAUDE_PLUGIN_ROOT}` does not resolve, pass the same script inline via the `script`
+parameter instead and say that you did; the path form is the one that has not been proven.
 
-6. **If a task failed**, set `state: failed` and stop the wave. If the cause is not obvious from
-   the executor's report and the `verify:` output, use the `diagnosing-bugs` skill before
-   guessing — it is a loop for exactly this. Then put three options to the user:
-   - fix this task and retry it
-   - go back and amend the plan, re-planning the remaining tasks
-   - abandon — `git revert` the task commits made so far, in reverse order
+**What the script does, so you can read its result:** it validates the graph (a cycle, an unknown
+`blocked-by`, or a risk marker aborts the run before any agent starts), then starts each task the
+moment *its own* blockers land rather than waiting for a whole wave. Each executor runs on
+`patimakorn:executor`, which pins `model: sonnet` in its own frontmatter — the script passes no
+`model`, so that pin is what takes effect. Every result is schema-validated: `filesTouched`,
+`verifyCommand`, `verifyStdout`, `passed`, `summary`, and an optional `contradiction`. A task
+whose blocker failed is never dispatched and comes back under `skipped`.
 
-   Do not start the next wave on top of a failed one.
+### 3. Verify every task yourself
+
+The script returns the executors' *claims*, in a validated shape. A shape is not a check.
+
+Run each task's `verify:` in this conversation and report the real output. An executor reporting
+`passed: true` is not evidence, and the script says so in its own return value.
+
+### 4. Commit sequentially, one task at a time, in task order
+
+```
+git add <that task's files>
+git commit -m "plan(<slug>) task <N>: <title>"
+```
+
+Committing stays here because concurrent agents would race on `.git/index.lock`, which is also
+why the executors are forbidden every git write command.
+
+Write the resulting sha into that task's `commit:` field and set `state: done`. Append a Log line.
+Commit the plan-file update itself as `plan(<slug>): task <N> done`.
+
+### 5. If a task failed
+
+Set `state: failed`. A task the script reports under `contradiction` is not a bug — it is an
+executor refusing to paper over a plan that disagrees with the repository, and the plan is what
+needs fixing.
+
+If the cause is not obvious from the returned `verifyStdout` and your own verify, use the
+`diagnosing-bugs` skill before guessing. Then put three options to the user:
+
+- fix this task and retry it
+- go back and amend the plan, re-planning the remaining tasks
+- abandon — `git revert` the task commits made so far, in reverse order
+
+To retry after a fix, re-invoke the workflow with `resumeFromRunId` set to the run id from the
+first result: unchanged tasks replay from cache and only the edited one runs live.
+
+Do not start work that depends on a failed task.
 
 ## Phase 6 — Review loop
 
@@ -365,10 +423,11 @@ it was not fixed.
 
 - Set `status: done`, or `status: blocked` with the reason. Commit the plan file.
 - Report, short, in the language the user is writing to you in:
-  - tasks done / total, and **how many were delegated versus done in the main loop** — name each
-    main-loop task and which line of phase 5 step 2 exempted it. A run that delegated few of its
-    `risk: none` tasks did not follow this command, whatever else it achieved, and the report is
-    where that becomes visible instead of only showing up on the bill.
+  - tasks done / total, and **how many went to the script versus stayed in this conversation** —
+    the script's return value carries `dispatched`, so this is a count, not an impression. Name
+    each main-loop task and which line of phase 5 step 1 exempted it. A run where that list is
+    long did not follow this command, whatever else it achieved, and the report is where that
+    becomes visible instead of only showing up on the bill.
   - verification results, with the real command output
   - review rounds run, and anything still open
   - what was skipped, and why

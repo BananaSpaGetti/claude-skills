@@ -1,7 +1,7 @@
 {
   "name": "patimakorn",
-  "version": "0.3.0",
-  "description": "One command for a large piece of work. Run it as `/patimakorn:anvil <what you want built>`. It interviews you as a design tree, writes a plan into the repo, executes it through executor subagents in parallel waves, commits each task separately so any one can be reverted alone, and loops the review until it comes back clean. Run it with no arguments to resume an in-progress plan after a session ends. A second command, `/patimakorn:anvil2`, runs the same eight phases with two changes under test: every subagent dispatch names its own model instead of inheriting the session's, and delegation is mandatory rather than advisory.",
+  "version": "0.4.0",
+  "description": "One command for a large piece of work. Run it as `/patimakorn:anvil <what you want built>`. It interviews you as a design tree, writes a plan into the repo, executes it through executor subagents in parallel waves, commits each task separately so any one can be reverted alone, and loops the review until it comes back clean. Run it with no arguments to resume an in-progress plan after a session ends. A second command, `/patimakorn:anvil2`, runs the same eight phases but hands phase 5 to a workflow script, so one executor per task is what the code does rather than what the prose asks for; every other dispatch names its own model instead of inheriting the session's.",
   "author": {
     "name": "BananaSpaGetti"
   },

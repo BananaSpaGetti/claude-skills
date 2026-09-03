@@ -59,6 +59,27 @@ the kind of mismatch that ships unnoticed. Treat any warning as a failure.
 `claude plugin validate plugins/<name>` does not surface drift at all: it validates that
 manifest in isolation and prints a clean pass. Only `claude plugin validate .` compares the two.
 
+## `plugins/patimakorn/workflows/` is executable, so it has a test
+
+`execute.workflow.js` is phase 5 of `/patimakorn:anvil2`: the script that dispatches one executor
+subagent per task. It exists because the same instruction written as prose in `anvil.md` was
+followed once in twenty-two chances. Treat it as code, not documentation.
+
+Two runtime constraints are load-bearing and easy to break by accident. The workflow runtime gives
+scripts **no filesystem and no Node API**, so the plan is parsed by the main loop and arrives via
+`args` — do not add a file read. And `Date.now()`, `new Date()` and `Math.random()` **throw**,
+because they would break resume; stamp timestamps after the workflow returns.
+
+`execute.workflow.test.js` stubs the agent and asserts ordering, concurrency, stranded dependents,
+cycle detection, unknown blockers and the risk-marker guard. It needs no network and costs nothing:
+
+```
+node plugins/patimakorn/workflows/execute.workflow.test.js
+```
+
+Run it after any edit to the script, alongside the two validate commands below. A change to the
+scheduler that passes validation and fails this test is not done.
+
 ## Validate before every commit
 
 Run both of these before committing anything under `.claude-plugin/` or `plugins/`, and

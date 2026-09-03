@@ -66,7 +66,7 @@ plan whose tree is dirty. Everywhere else it runs without checking in.
 Some work is deliberately *not* delegated: anything the plan marks `risk: destructive`,
 `risk: binary-format`, or `risk: judgement-call` stays in the main conversation.
 
-#### `anvil2` — the same eight phases, with two rules under test
+#### `anvil2` — the same eight phases, with phase 5 moved into code
 
 `anvil` treats delegation as advice, and a four-day run measured what that costs. Across three
 plans and 23 tasks — 22 of them `risk: none`, so all 22 were eligible — it dispatched one
@@ -74,24 +74,45 @@ executor. The other 313 tool calls ran in the main conversation, where each one 
 and leaves its result in context for every later turn. Context climbed from 72k to 556k tokens.
 Phase 1's "dispatch subagents for anything broad" ran zero times.
 
-Part of why: only `patimakorn:executor` pins a model in its frontmatter. `Explore` and
-`general-purpose` pin nothing, so they inherit whatever model the session is on. Of fifteen
-subagent transcripts in that run, exactly one ran on the small model, and three summarization
-agents that inherited the session model cost more than all eleven review finders combined.
+The lesson was not that the instruction was badly worded. It was that an instruction is the wrong
+mechanism: a rule the orchestrator can forget under pressure will be forgotten under pressure. So
+in `anvil2`, **phase 5's dispatch is a script** — `plugins/patimakorn/workflows/execute.workflow.js`
+— and the only code path that performs a task is its `agent()` call. There is no branch where the
+conversation does the work instead.
 
-So `anvil2` is `anvil` plus two rules:
+What moving it into code buys, beyond enforcement:
 
-- **Every dispatch names its model.** A table maps each kind of dispatch to one: retrieval and
-  summarization go to `sonnet`; research whose answer turns on source quality, and the phase 6
-  review finders, keep the session model deliberately — those finders returned fifteen confirmed
-  findings per round for under 8% of that run's cost, and the table says not to trade them down.
-- **Delegation is the default.** Phase 5's exemption list is exhaustive, a one-task wave is still
-  a dispatch, phase 1 has a dispatch floor, skipping a dispatch the rules call for requires a
-  stated reason, and phase 7 reports the delegated / main-loop split so a run that ignored all of
-  this is visible in its own report.
+- **A real dependency scheduler.** A task starts the moment *its own* `blocked-by` tasks land,
+  not when its whole wave clears. Waves are what prose can approximate; this is the thing code is
+  there for.
+- **A typed result contract.** Each executor's return is schema-validated at the tool layer, with
+  retry on mismatch: `filesTouched`, `verifyCommand`, `verifyStdout`, `passed`, `summary`, and an
+  optional `contradiction` for a plan that disagrees with the repository. "An executor claiming
+  success is not evidence" becomes a checkable shape instead of a warning.
+- **Failing loudly.** A dependency cycle, a `blocked-by` naming a task that was not passed in, or
+  a task carrying a `risk:` marker aborts the run before any agent starts, rather than hanging or
+  quietly running a destructive task on a subagent.
 
-Both commands ship so the change can be compared against the original. `anvil2` has not yet been
-run — see Known gaps.
+What stays in the conversation, because the runtime cannot do it: the interview and the approval
+(a script cannot ask you anything), reading the plan file (scripts get no filesystem — the main
+loop parses it and passes the tasks as `args`), running each `verify:` for real, and committing —
+concurrent agents would race `.git/index.lock`, which is also why executors are forbidden every
+git write command.
+
+Every other dispatch still names its model from a table rather than inheriting the session's:
+retrieval and summarization go to `sonnet`; research whose answer turns on source quality, and the
+phase 6 review finders, keep the session model deliberately — those finders returned fifteen
+confirmed findings per round for under 8% of that run's cost. The phase 5 executors need no
+override at all: `patimakorn:executor` pins `model: sonnet` in its own frontmatter, and a
+workflow-dispatched agent honours it.
+
+The scheduler has a test — `plugins/patimakorn/workflows/execute.workflow.test.js`, 22 assertions
+over ordering, concurrency, stranded dependents, cycles and the risk-marker guard. Run it with
+`node plugins/patimakorn/workflows/execute.workflow.test.js`; it stubs the agent, so it costs
+nothing and needs no network.
+
+Both commands ship, so the change can be compared against the original. `anvil2` has not yet been
+run end to end — see Known gaps.
 
 ### `engineering-kit` — nine disciplines the agent reaches for on its own
 
@@ -161,6 +182,7 @@ plugins/<name>/                   one directory per plugin
   .claude-plugin/plugin.json
   commands/ | agents/ | skills/
   output-styles/                  `caveman` only, so far
+  workflows/                      `patimakorn` only, so far — the phase 5 dispatcher and its test
   evals/                          `patimakorn` only, so far — see below
 ```
 
@@ -212,8 +234,16 @@ The single home for what is and is not verified. Nothing else in this file makes
       doing 313 tool calls in the main conversation instead; context reached 556k tokens. The
       command's text says to delegate, so this is a case of instructions that do not bind rather
       than a missing feature. `anvil2` is the attempt to make them bind.
-- [ ] `anvil2` has never been run. Its two rules are written and validated but unexercised, and
-      the number that decides whether they worked is phase 7's delegated / main-loop split.
+- [ ] `anvil2` has never been run end to end. Its parts are separately proven: a probe workflow
+      dispatched two `patimakorn:executor` agents concurrently, both resolved on `claude-sonnet-5`
+      rather than inheriting the session model, and both returned schema-validated results with
+      real verify stdout; and the scheduler's own test passes 22/22 against a stubbed agent. What
+      is untested is the whole path — a real plan parsed into `args`, the script run through
+      `${CLAUDE_PLUGIN_ROOT}`, results verified and committed. The number that decides whether it
+      worked is phase 7's script / main-loop split.
+- [ ] `${CLAUDE_PLUGIN_ROOT}` has never been exercised in a `Workflow({scriptPath})` call. Both
+      `council` and `anvil2` depend on it resolving. If it does not, the fallback is passing the
+      script inline via the `script` parameter.
 - [ ] `council.workflow.js` has been run once, from the author's user-scope copy. The published
       copy resolves its script through `${CLAUDE_PLUGIN_ROOT}` and that path has not been exercised.
 - [ ] The eval suite has never been executed — `claude plugin eval` is in early access and prints

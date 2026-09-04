@@ -235,10 +235,15 @@ Anything that could destroy data or is hard to undo, with the backup step for ea
 Appended as work happens: date, task, what happened.
 ```
 
-**Sizing guard.** Count the tasks and the widest wave before showing the plan:
+**Sizing guard.** Count the tasks before showing the plan:
 
 - more than 20 tasks — say so and offer to split into two plans
-- a wave wider than 4 — say so and offer to serialise part of it
+- **every task blocked by the one before it** — say so. A plan that is a single chain gets no
+  concurrency from the script at all, and is usually a plan whose `blocked-by` fields were filled
+  in by habit rather than by real dependencies. Ask which of them are genuinely ordered.
+
+Do not narrow a wide plan for fear of fan-out. The workflow runtime caps how many executors run
+at once and queues the rest, so breadth costs wall-clock, not correctness.
 
 ### Decisions that outlive the plan
 
@@ -274,8 +279,11 @@ not deleted when the plan is.
 
 Show the user, short:
 
-- the task list, with each task's wave number
-- which tasks are marked `risk:` and will therefore **not** be delegated
+- the task list, each task with what it is blocked by — not a wave number; the script schedules
+  from `blocked-by` directly, so a task starts when its own blockers land rather than when a wave
+  clears
+- which tasks are marked `risk:` and will therefore **not** go to the script, and will run in this
+  conversation instead
 - anything you had to assume because the interview did not settle it
 - **any file or directory this run would create outside `.plans/`** — an ADR directory the repo
   does not yet have, or a glossary that does not yet exist. Name the path. Creating a new
@@ -447,11 +455,11 @@ Reached when this command is run with no arguments.
    - **Several** — show them and ask which.
 
 2. Check the working tree:
-   - **Clean** — report where the plan stands (tasks done / total, which wave is next) and continue
-     at the first `todo` task whose blockers are all `done`.
+   - **Clean** — report where the plan stands (tasks done / total, which tasks are unblocked now)
+     and continue at phase 5 with every remaining `todo` task whose blockers are all `done`.
    - **Dirty because a merge or rebase is in progress** (`git status` says so) — use the
      `resolving-merge-conflicts` skill to finish it before touching the plan at all.
-   - **Dirty** — expected after a mid-wave failure. Show `git status --short`, name the task
+   - **Dirty** — expected after a failed task. Show `git status --short`, name the task
      sitting at `doing` or `failed`, and ask before touching anything:
      - keep the working-tree changes and continue from there
      - `git checkout -- .` back to the last task commit and retry that task

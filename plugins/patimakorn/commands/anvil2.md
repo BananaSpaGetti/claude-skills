@@ -95,6 +95,18 @@ Otherwise check, in order, and stop on the first failure:
 3. **Which branch?** `git branch --show-current`. If it is the repo's default branch (`main` or
    `master`), say so and offer to branch before any edit is made.
 
+4. **Which client is this?** `echo $CLAUDE_CODE_ENTRYPOINT`. This decides how phase 2 asks its
+   questions and nothing else, so it does not stop the run — note the value and move on.
+
+   - `cli` — the terminal. `AskUserQuestion` renders clickable options; phase 2 may use it.
+   - anything else, `claude-vscode` included, or empty — **use the numbered text format in phase 2.**
+
+   The rule is deliberately conservative rather than a blacklist of clients known to be broken.
+   A text round is answerable in every client; a `AskUserQuestion` round that renders without
+   its options is a dead end the user has to talk their way out of. When a client is unknown,
+   the format that always works is the correct guess. If the user says the buttons do render for
+   them, believe them and switch for the rest of the run.
+
 ## Phase 1 — Orient
 
 Read before you ask anything. Facts are your job; the user's time is for decisions.
@@ -126,25 +138,49 @@ settled — the questions answerable *now*, without guessing at answers you have
 
 Ask the whole frontier in one round, each question carrying your recommended answer.
 
-**When the round's questions are discrete choices, put them to the user with the
-`AskUserQuestion` tool** so they can click an option instead of typing one. Lead each question
-with the recommended option and mark it, so accepting the whole round costs one click per
-question.
+**The numbered text format below is the default.** It works in every client, and phase 0 step 4
+already established whether this one is an exception.
 
-Fall back to the numbered text format below when the tool does not fit: a question that wants
-prose rather than a choice, a round wider than four questions (ask the four that unblock the
-most and hold the rest for the next round), a question with more than four real options, or a
-choice whose options cannot be stated without a paragraph each.
+Use the `AskUserQuestion` tool instead only when **both** hold:
+
+- phase 0 found `CLAUDE_CODE_ENTRYPOINT=cli`, or the user has said the option buttons render for
+  them; **and**
+- the round is discrete choices — at most four questions, at most four options each, each option
+  statable in a line rather than a paragraph.
+
+When you do use it, lead each question with the recommended option and mark it, so accepting the
+whole round costs one click per question.
+
+Everything else takes the text format: a question that wants prose, a round wider than four
+questions (ask the four that unblock the most and hold the rest for the next round), a question
+with more than four real options, or any client that is not known to render the buttons.
+
+The text format loses nothing that matters. Both carry the same questions and the same
+recommended answers; only the input method differs, and the user can accept a text round in one
+message by writing the numbers.
+
+Letter every option so a whole round can be answered in one short line — `1b 2a 3 ok` — rather
+than in prose. Mark the recommendation, and put it first:
 
 ```
-Q1 — <question title>: <question body, including any options>
+Q1 — <short title>
+<one or two lines of question, and why it is being asked now>
+  a) <recommended option>   <- recommended
+  b) <the real alternative>
+  c) <the other real alternative>
 
-  -> <your recommended answer>
+Q2 — <short title>
+<question>
+  a) <recommended option>   <- recommended
+  b) <alternative>
 
-Q2 — <question title>: ...
-
-  -> <your recommended answer>
+Reply with the letters, e.g. `1a 2b`. Say "ok" or "all recommended" to take every
+recommendation. Anything you want to say in prose instead is fine — the letters are a
+shortcut, not a form.
 ```
+
+That closing line goes in every text round. Without it the user does not know that accepting the
+whole round costs two characters, which is the only advantage the buttons had.
 
 Either way the round ends with the user's answers in hand and nothing else attempted — the
 tool returns them directly, the text format waits for the user's next message. **Never carry on

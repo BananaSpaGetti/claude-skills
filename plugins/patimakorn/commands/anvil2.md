@@ -95,26 +95,13 @@ Otherwise check, in order, and stop on the first failure:
 3. **Which branch?** `git branch --show-current`. If it is the repo's default branch (`main` or
    `master`), say so and offer to branch before any edit is made.
 
-4. **Which client is this?** `echo $CLAUDE_CODE_ENTRYPOINT`. This decides how phase 2 asks its
-   questions and nothing else, so it does not stop the run — note the value and move on.
+4. **Is there an interactive user at all?** `echo $CLAUDE_CODE_ENTRYPOINT`. If it is `sdk-cli`,
+   `sdk-ts`, `sdk-py`, `mcp`, `claude-code-github-action`, or `local-agent`, nobody is there to
+   answer phase 2. Say so and stop rather than interviewing an empty chair. Any other value, or
+   an empty one, means a person is present — note nothing and move on.
 
-   - `claude-vscode` — the VS Code extension. **Its option buttons do not render**, so phase 2
-     uses the numbered text format there.
-   - `sdk-cli`, `sdk-ts`, `sdk-py`, `mcp`, `claude-code-github-action`, `local-agent` — there is
-     no interactive user at all. Phase 2 cannot run. Say so and stop rather than interviewing an
-     empty chair.
-   - anything else — `cli`, the desktop app, `remote_*`, Slack, Teams, or a value not listed here
-     — **use `AskUserQuestion`.** Most clients render it; only VS Code is known not to.
-
-   This is a denylist of one, not an allowlist, and that is the deliberate choice: the two ways
-   of being wrong are symmetric — a client wrongly denied buttons still gets an answerable text
-   round, and a client wrongly given them still gets a round the user can answer in prose — so
-   the tiebreak is which case is more common, and buttons work almost everywhere. Do not narrow
-   this to a list of clients you have personally seen work; that denies the picker to every
-   client nobody happened to test, which is most of them.
-
-   **The real safety net is the user, not this check.** If the buttons do not render for them,
-   they will say so — switch to the text format for the rest of the run and do not ask again.
+   Do not use this value to decide *how* phase 2 asks. That was tried twice and was wrong both
+   times; see phase 2.
 
 ## Phase 1 — Orient
 
@@ -147,22 +134,24 @@ settled — the questions answerable *now*, without guessing at answers you have
 
 Ask the whole frontier in one round, each question carrying your recommended answer.
 
-**Ask with the `AskUserQuestion` tool when the round fits it and the client renders it.** It fits
-when the round is discrete choices: at most four questions, at most four options each, each
-option statable in a line rather than a paragraph. Lead each question with the recommended
-option and mark it, so accepting the whole round costs one click per question. Phase 0 step 4
-already established whether this client is the one exception.
+**Ask in the lettered text format below. That is the default, for everyone, always.**
 
-**Use the numbered text format below whenever it does not.** That covers three cases, and none
-of them is a downgrade — both formats carry the same questions and the same recommendations, and
-only the input method differs:
+`AskUserQuestion` renders a list of options, but whether that list is *clickable* is a property
+of the user's setup, not of the client — the same person can find it unclickable in the terminal,
+in the VS Code extension, and on mobile. When it is not clickable it is strictly worse than text:
+the user reads the options, then types the answer anyway, having been shown a widget that implied
+they would not have to.
 
-- the client is `claude-vscode`, where the option buttons do not render
-- the round does not fit four-by-four: a question that wants prose, a round wider than four
-  questions (ask the four that unblock the most and hold the rest for the next round), a question
-  with more than four real options, or a choice whose options need a paragraph each
-- the user has said the buttons are not rendering for them — from that point on, text for the
-  rest of the run
+Two attempts were made to detect this from `CLAUDE_CODE_ENTRYPOINT` — first an allowlist, then a
+denylist. Both were wrong, because the client is not the variable. **Do not try a third time.**
+
+Use `AskUserQuestion` only when the user has said, in this conversation, that the picker works
+for them — then use it for every round that fits four-by-four (at most four questions, at most
+four options each, each option statable in a line), and fall back to text for the rounds that do
+not fit. Never switch to it on your own reasoning about their setup.
+
+The text format is not a downgrade. Both carry the same questions and the same recommendations;
+only the input method differs, and a lettered round is accepted in two characters.
 
 Letter every option so a whole round can be answered in one short line — `1b 2a 3 ok` — rather
 than in prose. Mark the recommendation, and put it first:

@@ -98,14 +98,23 @@ Otherwise check, in order, and stop on the first failure:
 4. **Which client is this?** `echo $CLAUDE_CODE_ENTRYPOINT`. This decides how phase 2 asks its
    questions and nothing else, so it does not stop the run — note the value and move on.
 
-   - `cli` — the terminal. `AskUserQuestion` renders clickable options; phase 2 may use it.
-   - anything else, `claude-vscode` included, or empty — **use the numbered text format in phase 2.**
+   - `claude-vscode` — the VS Code extension. **Its option buttons do not render**, so phase 2
+     uses the numbered text format there.
+   - `sdk-cli`, `sdk-ts`, `sdk-py`, `mcp`, `claude-code-github-action`, `local-agent` — there is
+     no interactive user at all. Phase 2 cannot run. Say so and stop rather than interviewing an
+     empty chair.
+   - anything else — `cli`, the desktop app, `remote_*`, Slack, Teams, or a value not listed here
+     — **use `AskUserQuestion`.** Most clients render it; only VS Code is known not to.
 
-   The rule is deliberately conservative rather than a blacklist of clients known to be broken.
-   A text round is answerable in every client; a `AskUserQuestion` round that renders without
-   its options is a dead end the user has to talk their way out of. When a client is unknown,
-   the format that always works is the correct guess. If the user says the buttons do render for
-   them, believe them and switch for the rest of the run.
+   This is a denylist of one, not an allowlist, and that is the deliberate choice: the two ways
+   of being wrong are symmetric — a client wrongly denied buttons still gets an answerable text
+   round, and a client wrongly given them still gets a round the user can answer in prose — so
+   the tiebreak is which case is more common, and buttons work almost everywhere. Do not narrow
+   this to a list of clients you have personally seen work; that denies the picker to every
+   client nobody happened to test, which is most of them.
+
+   **The real safety net is the user, not this check.** If the buttons do not render for them,
+   they will say so — switch to the text format for the rest of the run and do not ask again.
 
 ## Phase 1 — Orient
 
@@ -138,26 +147,22 @@ settled — the questions answerable *now*, without guessing at answers you have
 
 Ask the whole frontier in one round, each question carrying your recommended answer.
 
-**The numbered text format below is the default.** It works in every client, and phase 0 step 4
-already established whether this one is an exception.
+**Ask with the `AskUserQuestion` tool when the round fits it and the client renders it.** It fits
+when the round is discrete choices: at most four questions, at most four options each, each
+option statable in a line rather than a paragraph. Lead each question with the recommended
+option and mark it, so accepting the whole round costs one click per question. Phase 0 step 4
+already established whether this client is the one exception.
 
-Use the `AskUserQuestion` tool instead only when **both** hold:
+**Use the numbered text format below whenever it does not.** That covers three cases, and none
+of them is a downgrade — both formats carry the same questions and the same recommendations, and
+only the input method differs:
 
-- phase 0 found `CLAUDE_CODE_ENTRYPOINT=cli`, or the user has said the option buttons render for
-  them; **and**
-- the round is discrete choices — at most four questions, at most four options each, each option
-  statable in a line rather than a paragraph.
-
-When you do use it, lead each question with the recommended option and mark it, so accepting the
-whole round costs one click per question.
-
-Everything else takes the text format: a question that wants prose, a round wider than four
-questions (ask the four that unblock the most and hold the rest for the next round), a question
-with more than four real options, or any client that is not known to render the buttons.
-
-The text format loses nothing that matters. Both carry the same questions and the same
-recommended answers; only the input method differs, and the user can accept a text round in one
-message by writing the numbers.
+- the client is `claude-vscode`, where the option buttons do not render
+- the round does not fit four-by-four: a question that wants prose, a round wider than four
+  questions (ask the four that unblock the most and hold the rest for the next round), a question
+  with more than four real options, or a choice whose options need a paragraph each
+- the user has said the buttons are not rendering for them — from that point on, text for the
+  rest of the run
 
 Letter every option so a whole round can be answered in one short line — `1b 2a 3 ok` — rather
 than in prose. Mark the recommendation, and put it first:

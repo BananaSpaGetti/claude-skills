@@ -161,9 +161,9 @@ Settled with the user in the interview:
   confirm it names patimakorn and nine.
 
 ### Task 5 — Merge anvil2 into main and push
-- state: todo
+- state: done
 - blocked-by: 1, 2, 3
-- commit:
+- commit: 62e06c2 (fast-forward; the merge moved main, it created no commit of its own)
 - risk: judgement-call
 - change: `git checkout main`, `git merge anvil2` (fast-forward expected — `main` has not moved),
   then `git push origin main`. Git writes, so this is main-loop work by construction; executors
@@ -238,3 +238,9 @@ Settled with the user in the interview:
   fixed it properly, in the mechanism: Resume now reads `status:` first and sends `reviewing` to
   phase 6. A false record of a fix is worse than an open finding — the next reader believes the
   window is shut and never looks.
+- 2026-09-12 — task 5 done in the main loop: fast-forward merge of `anvil2` into `main`, then
+  `git push origin main` — 5cafcfd..62e06c2. The push moved `main` by 14 commits; the merge
+  created no commit of its own, so task 5's `commit:` names the tip it landed. Anonymous access
+  re-checked immediately after and still returns 404 on both URLs, which is correct: the repo is
+  still private and this plan deliberately stops before the visibility flip.
+- 2026-09-12 — plan closed. 5/5 tasks done. Script 3, main loop 2.

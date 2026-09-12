@@ -112,7 +112,7 @@ over ordering, concurrency, stranded dependents, cycles and the risk-marker guar
 nothing and needs no network.
 
 Both commands ship, so the change can be compared against the original. What has and has not been
-proven about either is in Known gaps, which is the only place in this file that says so.
+proven about either is tracked in Known gaps — start there.
 
 ### `engineering-kit` — nine disciplines the agent reaches for on its own
 
@@ -253,7 +253,8 @@ The single home for what is and is not verified. Nothing else in this file makes
       whether it fixed `anvil`'s defect: of the 4 tasks that have executed, 3 went to the script
       and 1 stayed in the main loop.** The plan's fifth task — merge and push — had not run when
       this was written. Both main-loop tasks are `risk: judgement-call` and exempt by phase 5
-      step 1: one mutates GitHub repo metadata, the other is a git write executors are forbidden. The three
+      step 1: the one that has run mutates GitHub repo metadata; the one still pending is a git
+      write executors are forbidden. The three
       dispatched tasks ran concurrently on three disjoint files and returned schema-validated
       results whose `verify:` commands were then re-run in the main loop before each commit.
       Two things this does not cover. It did **not** exercise `${CLAUDE_PLUGIN_ROOT}`: the run

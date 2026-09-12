@@ -317,9 +317,19 @@ Reached when this command is run with no arguments.
    - **Exactly one in progress** (`approved`, `executing`, `reviewing`) — use it.
    - **Several** — show them and ask which.
 
-2. Check the working tree:
+2. **Read `status:` first — it decides which phase you resume into.** A plan at `reviewing` was
+   interrupted mid review loop: resume at phase 6, not phase 5. A `todo` task whose blockers are
+   `done` is not an invitation there, because the review has not finished judging the work those
+   blockers produced, and the task it would start may be the one that pushes. `approved` or
+   `executing` resume at phase 5; `blocked` means surfacing the recorded reason to the user first.
+
+   Neither Resume section filters `.plans/*.md` by which command wrote the plan, so this command
+   can pick up an `anvil2` plan and vice versa. Treat `commit: none (no file change)` as proof a
+   task landed — `anvil2` writes it for a task whose effect is not in the repo.
+
+3. Check the working tree:
    - **Clean** — report where the plan stands (tasks done / total, which wave is next) and continue
-     at the first `todo` task whose blockers are all `done`.
+     at the phase step 2 selected.
    - **Dirty because a merge or rebase is in progress** (`git status` says so) — use the
      `resolving-merge-conflicts` skill to finish it before touching the plan at all.
    - **Dirty** — expected after a mid-wave failure. Show `git status --short`, name the task
@@ -328,4 +338,4 @@ Reached when this command is run with no arguments.
      - `git checkout -- .` back to the last task commit and retry that task
      - abandon the plan and revert its commits in reverse order
 
-3. Never restart a task whose `state:` is `done`. The `commit:` field is the proof it landed.
+4. Never restart a task whose `state:` is `done`. The `commit:` field is the proof it landed.

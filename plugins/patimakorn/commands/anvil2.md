@@ -351,7 +351,11 @@ external job — in that last case the executor still makes the change and **you
 risk marker reaches it, so mis-sorting fails loudly rather than quietly running a destructive
 task on a subagent.
 
-Set every task being started to `state: doing` in the plan file.
+**Set `status: executing` in the plan file, and set every task being started to `state: doing`.**
+Do this before the script runs, not after. `approved` means phase 4 finished and phase 5 has not
+begun; `executing` is the only thing that tells a resuming session the work is already in flight.
+Leaving it at `approved` while tasks land is what makes an interrupted phase 5 indistinguishable
+from an approved plan nobody has started.
 
 ### 2. Run the script
 
@@ -486,6 +490,8 @@ Reached when this command is run with no arguments.
    - **No plan files, or none in progress** — say so, list what is there, and ask what to build.
      Do not silently do nothing.
    - **Exactly one in progress** (`approved`, `executing`, `reviewing`) — use it.
+   - **One at `blocked`** — that is not "nothing in progress". Phase 7 writes it with a reason;
+     surface that reason first and let the user decide, rather than asking what to build.
    - **Several** — show them and ask which.
 
 2. **Read `status:` before looking at the tree. It decides which phase you resume into**, and
@@ -501,7 +507,13 @@ Reached when this command is run with no arguments.
      and continue at the phase step 2 selected.
    - **Dirty because a merge or rebase is in progress** (`git status` says so) — use the
      `resolving-merge-conflicts` skill to finish it before touching the plan at all.
-   - **Dirty** — expected after a failed task. Show `git status --short`, name the task
+   - **Dirty, with `status: reviewing`** — the most likely interruption of all, because phase 6
+     edits the tree before committing each round as `plan(<slug>): review fixes round <N>`. Those
+     changes are unfinished review fixes, **not** a failed task. Show `git status --short`, say
+     which review round was in flight, and ask whether to finish that round or discard it. Never
+     offer `git checkout -- .` here as "retry that task" — it throws away review work and points
+     at the wrong phase.
+   - **Dirty, otherwise** — expected after a failed task. Show `git status --short`, name the task
      sitting at `doing` or `failed`, and ask before touching anything:
      - keep the working-tree changes and continue from there
      - `git checkout -- .` back to the last task commit and retry that task

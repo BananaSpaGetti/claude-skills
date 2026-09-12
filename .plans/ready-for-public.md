@@ -140,7 +140,10 @@ Settled with the user in the interview:
 - done-when: the two descriptions are byte-identical, both files say `"version": "0.9.0"`, and
   `git diff --stat` shows only those two files with a small line count.
 - verify: `python -c "import json;a=json.load(open('.claude-plugin/marketplace.json',encoding='utf-8'));b=json.load(open('plugins/patimakorn/.claude-plugin/plugin.json',encoding='utf-8'));p=[x for x in a['plugins'] if x['name']=='patimakorn'][0];print('desc match:',p['description']==b['description']);print('versions:',p['version'],b['version'])"`
-  prints `desc match: True` and `versions: 0.9.0 0.9.0`.
+  prints `desc match: True`, and the two versions agree with each other. **Do not pin the number
+  here.** This task set it to `0.9.0`; later review rounds edited the plugin's command files and
+  bumped it again, as this repo's rule requires, so a recorded literal turns a correct bump into
+  an apparent regression on a task already marked `done`.
 
 ### Task 4 — Fix the stale GitHub repo description
 - state: done

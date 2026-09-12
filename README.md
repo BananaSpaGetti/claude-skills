@@ -215,8 +215,14 @@ The single home for what is and is not verified. Nothing else in this file makes
 - [ ] **The repository is private.** No stranger has installed anything here. The install above
       was run twice by the owner while authenticated — under the plugin's former name on
       2026-08-28 and under the current one on 2026-08-30 — which proves the manifest resolves and
-      the plugin unpacks, and proves nothing about anonymous access. This box gets ticked after
-      the repo is public *and* the install is repeated from a logged-out client, not before.
+      the plugin unpacks, and proves nothing about anonymous access. Baseline, taken while
+      private, needing no `gh auth logout` — this is the logged-out test to re-run:
+      ```
+      curl -s -o /dev/null -w "%{http_code}" https://raw.githubusercontent.com/BananaSpaGetti/claude-skills/main/.claude-plugin/marketplace.json
+      curl -s -o /dev/null -w "%{http_code}" https://api.github.com/repos/BananaSpaGetti/claude-skills
+      ```
+      Both currently print `404`. This box gets ticked after the repo is public *and* both of the
+      above print `200` from a logged-out client, not before.
 - [x] `anvil` run on a real repo, start to finish, twice — on this one. Both runs are in the
       history under `plan(<slug>)` commits; their plan files were deleted at close-out. The
       first (`anvil-self-test`, `b218a09..2950089`) went through all eight phases but was cut to
@@ -234,16 +240,19 @@ The single home for what is and is not verified. Nothing else in this file makes
       doing 313 tool calls in the main conversation instead; context reached 556k tokens. The
       command's text says to delegate, so this is a case of instructions that do not bind rather
       than a missing feature. `anvil2` is the attempt to make them bind.
-- [ ] `anvil2` has never been run end to end. Its parts are separately proven: a probe workflow
-      dispatched two `patimakorn:executor` agents concurrently, both resolved on `claude-sonnet-5`
-      rather than inheriting the session model, and both returned schema-validated results with
-      real verify stdout; and the scheduler's own test passes 22/22 against a stubbed agent. What
-      is untested is the whole path — a real plan parsed into `args`, the script run through
-      `${CLAUDE_PLUGIN_ROOT}`, results verified and committed. The number that decides whether it
-      worked is phase 7's script / main-loop split.
+- [x] `anvil2` ran end to end on this repository on 2026-09-12, under plan `ready-for-public`.
+      The run exercised a real plan parsed into `args`, the script dispatching executors
+      concurrently, schema-validated results, and a commit per task. It did **not** exercise
+      `${CLAUDE_PLUGIN_ROOT}` — this run used an absolute `scriptPath` from a user-scope test
+      copy of the command, not the published plugin's resolution path. See the
+      `${CLAUDE_PLUGIN_ROOT}` bullet below for what still has to happen before that gap closes.
 - [ ] `${CLAUDE_PLUGIN_ROOT}` has never been exercised in a `Workflow({scriptPath})` call. Both
       `council` and `anvil2` depend on it resolving. If it does not, the fallback is passing the
-      script inline via the `script` parameter.
+      script inline via the `script` parameter. Testing it needs three steps in order: push this
+      branch, run `claude plugin update` against the published copy, and try it from a fresh
+      session — the 2026-09-12 `anvil2` run used an absolute `scriptPath` and proved nothing here.
+      This is now a blocker on going public, not a loose end: a stranger's first install resolves
+      through `${CLAUDE_PLUGIN_ROOT}` with no fallback already in place.
 - [ ] `council.workflow.js` has been run once, from the author's user-scope copy. The published
       copy resolves its script through `${CLAUDE_PLUGIN_ROOT}` and that path has not been exercised.
 - [ ] The eval suite has never been executed — `claude plugin eval` is in early access and prints

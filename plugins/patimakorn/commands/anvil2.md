@@ -100,8 +100,7 @@ Otherwise check, in order, and stop on the first failure:
    answer phase 2. Say so and stop rather than interviewing an empty chair. Any other value, or
    an empty one, means a person is present — note nothing and move on.
 
-   Do not use this value to decide *how* phase 2 asks. That was tried twice and was wrong both
-   times; see phase 2.
+   This says whether to ask, not how. How is phase 2's business and does not depend on the client.
 
 ## Phase 1 — Orient
 
@@ -134,27 +133,23 @@ settled — the questions answerable *now*, without guessing at answers you have
 
 Ask the whole frontier in one round, each question carrying your recommended answer.
 
-**Ask in the lettered text format below. That is the default, for everyone, always.**
+**Put the round to the user with the `AskUserQuestion` tool whenever it fits.** It fits when the
+round is discrete choices: at most four questions, at most four options each, each option statable
+in a line rather than a paragraph. Lead each question with the recommended option and mark it, so
+accepting the whole round costs one click per question.
 
-`AskUserQuestion` renders a list of options, but whether that list is *clickable* is a property
-of the user's setup, not of the client — the same person can find it unclickable in the terminal,
-in the VS Code extension, and on mobile. When it is not clickable it is strictly worse than text:
-the user reads the options, then types the answer anyway, having been shown a widget that implied
-they would not have to.
+Reach for the tool rather than writing the options out yourself. Options typed into your reply as
+`a) b) c)` look like a picker and are not one — the user has to read them and then type an answer
+anyway. If the round fits, the tool is what they want; hand-written options are the fallback, not
+an equivalent.
 
-Two attempts were made to detect this from `CLAUDE_CODE_ENTRYPOINT` — first an allowlist, then a
-denylist. Both were wrong, because the client is not the variable. **Do not try a third time.**
+**Fall back to the lettered text format below** when the round does not fit the tool: a question
+that wants prose rather than a choice, a round wider than four questions (ask the four that
+unblock the most and hold the rest for the next round), a question with more than four real
+options, or a choice whose options need a paragraph each. Then letter them, so the round is still
+cheap to answer.
 
-Use `AskUserQuestion` only when the user has said, in this conversation, that the picker works
-for them — then use it for every round that fits four-by-four (at most four questions, at most
-four options each, each option statable in a line), and fall back to text for the rounds that do
-not fit. Never switch to it on your own reasoning about their setup.
-
-The text format is not a downgrade. Both carry the same questions and the same recommendations;
-only the input method differs, and a lettered round is accepted in two characters.
-
-Letter every option so a whole round can be answered in one short line — `1b 2a 3 ok` — rather
-than in prose. Mark the recommendation, and put it first:
+Mark the recommendation and put it first, so the round stays one line to accept:
 
 ```
 Q1 — <short title>
@@ -173,8 +168,9 @@ recommendation. Anything you want to say in prose instead is fine — the letter
 shortcut, not a form.
 ```
 
-That closing line goes in every text round. Without it the user does not know that accepting the
-whole round costs two characters, which is the only advantage the buttons had.
+That closing line goes in every text round. Without it the user does not know the whole round can
+be accepted in two characters, and a text round that reads like a form is the thing this format
+has to avoid.
 
 Either way the round ends with the user's answers in hand and nothing else attempted — the
 tool returns them directly, the text format waits for the user's next message. **Never carry on

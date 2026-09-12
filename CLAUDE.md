@@ -30,9 +30,11 @@ they are addressed as `/patimakorn:anvil` and `/patimakorn:anvil2`; the plugin w
 
 **The repository is private as of 2026-09-03.** The remote is
 `github.com/BananaSpaGetti/claude-skills` and `/plugin marketplace add BananaSpaGetti/claude-skills`
-resolves for the owner, who is authenticated; no stranger can install anything here yet. Do not
-write "published" or "a stranger installs them" anywhere in this repo until that changes and an
-anonymous install has actually been tried — README's Known gaps tracks it.
+resolves for the owner, who is authenticated; no stranger can install anything here yet. So do
+not **assert that anyone outside has installed or can install** these plugins until that changes
+and an anonymous install has actually been tried — README's Known gaps tracks it. Describing the
+published *path* ("the published copy resolves its script through ...") is fine and often
+necessary; claiming the path has been *walked* is what this forbids.
 
 `README.md` carries its own layout tree for a reader installing the plugins. When you add or
 move a top-level directory, update both — they drifted once already.
@@ -114,15 +116,46 @@ and its entry in `.claude-plugin/marketplace.json`. The two must always agree, o
 
 ## Making this repository public
 
-Ordered procedure, in this order:
+Ordered procedure. Each step depends on the one before it.
 
-1. The `${CLAUDE_PLUGIN_ROOT}` test must pass first — push, run
-   `claude plugin update patimakorn`, start a fresh session, run `/patimakorn:anvil2`, and
-   confirm phase 5's `Workflow` `scriptPath` resolves.
-2. `gh repo edit BananaSpaGetti/claude-skills --visibility public`
-3. Re-run both anonymous `curl` commands from README's Known gaps and confirm they return
-   `200` where they returned `404`.
-4. Tick the private-repo box in README's Known gaps.
+1. **Merge the work into `main` and push it.** The marketplace resolves a plugin from the
+   repository's **default branch**, so anything sitting on a side branch does not exist as far as
+   `claude plugin update` is concerned. Testing step 2 against an unmerged branch tests nothing.
+2. **Refresh the marketplace, then the plugin.** Two commands, in this order:
+   ```
+   claude plugin marketplace update claude-skills
+   claude plugin update patimakorn
+   ```
+   `claude plugin update` alone resolves against the *cached* manifest and will happily print
+   `already at the latest version` while serving the copy you just replaced.
+3. **Prove `${CLAUDE_PLUGIN_ROOT}` resolves.** From a **fresh session** — plugins load at session
+   start — run the smallest thing that exercises exactly that and nothing else:
+   ```
+   Workflow({ scriptPath: "${CLAUDE_PLUGIN_ROOT}/workflows/execute.workflow.js",
+              args: { slug: "probe", goal: "", context: "", tasks: [] } })
+   ```
+   The script rejects an empty `tasks` array by design, so the **pass condition is the error it
+   returns**: `anvil-execute: args.tasks is empty` means the path resolved and the script ran.
+   A path-resolution failure looks different and names the path. Do not use a whole
+   `/patimakorn:anvil2` run for this — it would gate going public on inventing and approving a
+   throwaway plan, and any stumble in phases 1-4 would be indistinguishable from the variable
+   failing.
+4. **`gh repo edit BananaSpaGetti/claude-skills --visibility public`**
+5. **Re-run the two anonymous `curl` commands** from README's Known gaps. Read the result
+   carefully rather than looking for the word "pass":
+   - the raw URL is pinned to `/main/`, so a `200` proves only that *`main`* is readable — which
+     is why step 1 comes first
+   - `raw.githubusercontent.com` caches for minutes, so a `404` straight after the flip may be
+     stale rather than real; wait and repeat
+   - anonymous `api.github.com` allows 60 requests an hour and returns **403** when exhausted.
+     403 is neither pass nor fail — it means try again later
+6. **Retire the privacy claims, all of them.** Ticking one box is not enough; these are wrong the
+   moment step 4 lands:
+   - README's Known-gaps private-repo box (and it needs a real anonymous install, not just two
+     `200`s — the box says so)
+   - `README.md`'s Install section: "The repository is private as of 2026-09-03..."
+   - this file's own "**The repository is private as of 2026-09-03**" paragraph, including the
+     prohibition it carries, which exists only until that moment
 
-Step 2 is the user's own keystroke. An agent must not run it unasked — a fork or clone taken
+Step 4 is the user's own keystroke. An agent must not run it unasked — a fork or clone taken
 while the repo is public cannot be recalled.

@@ -1,7 +1,7 @@
 ---
 slug: ready-for-public
 created: 2026-09-12
-status: executing
+status: reviewing
 branch: anvil2
 ---
 
@@ -145,7 +145,7 @@ Settled with the user in the interview:
 ### Task 4 — Fix the stale GitHub repo description
 - state: done
 - blocked-by: none
-- commit: (no file change — remote metadata only)
+- commit:
 - risk: judgement-call
 - change: Run `gh repo edit BananaSpaGetti/claude-skills --description "<new>"` with a description
   that names `patimakorn` rather than `anvil`, says nine vendored engineering skills rather than
@@ -203,4 +203,20 @@ Settled with the user in the interview:
   re-run in the main loop before its commit. Committed b0049ec, 8dc159a, 086904a.
 - 2026-09-12 — task 4 done in the main loop. First attempt failed:
   `HTTP 422: description cannot be more than 350 characters`. Re-run at 297 characters, accepted.
-  No file changed — the description lives in GitHub repo metadata.
+  No file changed — the description lives in GitHub repo metadata, so task 4's `commit:` field is
+  correctly empty and it has no revert handle. The previous description is preserved in this
+  plan's Context above; that is the only record of it.
+- 2026-09-12 — review round 1, `xhigh`, returned 15 findings, all against this plan's own output.
+  Ten were fixed. Three could not be fixed retroactively and are recorded here instead:
+  **(a)** task 1's `verify:` was vacuous — `grep "ready-for-public\|CLAUDE_PLUGIN_ROOT\|404"`
+  matched strings that were already in `README.md` before the task ran, so it returned 0 whether
+  the edit happened or not. The executor's `passed: true` rested on a check that could not fail.
+  The `done-when` was precise; the `verify:` did not test it. **A verify that cannot fail is not a
+  verify, and writing one is a planning defect, not an executor defect.**
+  **(b)** task 3 edited both plugin manifests but its `verify:` omitted the two
+  `claude plugin validate` commands this repo mandates before any commit under `.claude-plugin/`
+  or `plugins/`. Both pass at HEAD when run by hand, so nothing shipped broken — but the plan's
+  gate did not include the repo's own gate.
+  **(c)** `status:` was left at `executing` through the start of phase 6. A resume in that window
+  would have read the plan as mid-phase-5, seen task 5 unblocked, and pushed to `main` with the
+  review never having run.

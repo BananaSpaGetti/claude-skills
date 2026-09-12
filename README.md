@@ -111,8 +111,8 @@ over ordering, concurrency, stranded dependents, cycles and the risk-marker guar
 `node plugins/patimakorn/workflows/execute.workflow.test.js`; it stubs the agent, so it costs
 nothing and needs no network.
 
-Both commands ship, so the change can be compared against the original. `anvil2` has not yet been
-run end to end — see Known gaps.
+Both commands ship, so the change can be compared against the original. What has and has not been
+proven about either is in Known gaps, which is the only place in this file that says so.
 
 ### `engineering-kit` — nine disciplines the agent reaches for on its own
 
@@ -221,8 +221,12 @@ The single home for what is and is not verified. Nothing else in this file makes
       curl -s -o /dev/null -w "%{http_code}" https://raw.githubusercontent.com/BananaSpaGetti/claude-skills/main/.claude-plugin/marketplace.json
       curl -s -o /dev/null -w "%{http_code}" https://api.github.com/repos/BananaSpaGetti/claude-skills
       ```
-      Both currently print `404`. This box gets ticked after the repo is public *and* both of the
-      above print `200` from a logged-out client, not before.
+      Both currently print `404`. Note what this does and does not prove: two `200`s show the
+      objects are anonymously readable, which is necessary but not sufficient — they exercise
+      neither `/plugin marketplace add` nor `/plugin install`, so a manifest that fetches but
+      fails to clone, validate or unpack would still pass. This box gets ticked only after the
+      repo is public, both commands print `200`, **and** the two install commands at the top of
+      this file have actually been run by someone who is not the owner.
 - [x] `anvil` run on a real repo, start to finish, twice — on this one. Both runs are in the
       history under `plan(<slug>)` commits; their plan files were deleted at close-out. The
       first (`anvil-self-test`, `b218a09..2950089`) went through all eight phases but was cut to
@@ -240,19 +244,26 @@ The single home for what is and is not verified. Nothing else in this file makes
       doing 313 tool calls in the main conversation instead; context reached 556k tokens. The
       command's text says to delegate, so this is a case of instructions that do not bind rather
       than a missing feature. `anvil2` is the attempt to make them bind.
-- [x] `anvil2` ran end to end on this repository on 2026-09-12, under plan `ready-for-public`.
-      The run exercised a real plan parsed into `args`, the script dispatching executors
-      concurrently, schema-validated results, and a commit per task. It did **not** exercise
-      `${CLAUDE_PLUGIN_ROOT}` — this run used an absolute `scriptPath` from a user-scope test
-      copy of the command, not the published plugin's resolution path. See the
-      `${CLAUDE_PLUGIN_ROOT}` bullet below for what still has to happen before that gap closes.
+- [x] `anvil2` ran its interview, plan, execute and review phases on this repository on
+      2026-09-12, under plan `ready-for-public`. **The split, which is the number that decides
+      whether it fixed `anvil`'s defect: 3 of 5 tasks went to the script, 2 stayed in the main
+      loop.** Both main-loop tasks were `risk: judgement-call` and exempt by phase 5 step 1 — one
+      mutates GitHub repo metadata, the other is a git write executors are forbidden. The three
+      dispatched tasks ran concurrently on three disjoint files and returned schema-validated
+      results whose `verify:` commands were then re-run in the main loop before each commit.
+      Two things this does not cover. It did **not** exercise `${CLAUDE_PLUGIN_ROOT}`: the run
+      used an absolute `scriptPath` from a user-scope test copy of the command, not the published
+      plugin's resolution path. And "a commit per task" held for 3 of 5 — task 4 changed no file,
+      so it has no sha to revert.
 - [ ] `${CLAUDE_PLUGIN_ROOT}` has never been exercised in a `Workflow({scriptPath})` call. Both
       `council` and `anvil2` depend on it resolving. If it does not, the fallback is passing the
       script inline via the `script` parameter. Testing it needs three steps in order: push this
       branch, run `claude plugin update` against the published copy, and try it from a fresh
       session — the 2026-09-12 `anvil2` run used an absolute `scriptPath` and proved nothing here.
-      This is now a blocker on going public, not a loose end: a stranger's first install resolves
-      through `${CLAUDE_PLUGIN_ROOT}` with no fallback already in place.
+      Treat it as a blocker on going public rather than a loose end — not because there is no
+      fallback (`anvil2.md` tells the model to pass the script inline via the `script` parameter
+      if the path does not resolve) but because that fallback has never been exercised either, so
+      a stranger's first run would be testing both the failure and the recovery at once.
 - [ ] `council.workflow.js` has been run once, from the author's user-scope copy. The published
       copy resolves its script through `${CLAUDE_PLUGIN_ROOT}` and that path has not been exercised.
 - [ ] The eval suite has never been executed — `claude plugin eval` is in early access and prints

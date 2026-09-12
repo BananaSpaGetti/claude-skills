@@ -133,44 +133,36 @@ settled — the questions answerable *now*, without guessing at answers you have
 
 Ask the whole frontier in one round, each question carrying your recommended answer.
 
-**Put the round to the user with the `AskUserQuestion` tool whenever it fits.** It fits when the
-round is discrete choices: at most four questions, at most four options each, each option statable
-in a line rather than a paragraph. Lead each question with the recommended option and mark it, so
-accepting the whole round costs one click per question.
+**Put the round to the user with the `AskUserQuestion` tool. This is the default, and it is not a
+judgement call.** An interview round is discrete choices each carrying a recommendation, which is
+exactly what the tool renders. Lead each question with the recommended option, mark it, and put it
+first, so accepting the whole round costs one click per question. Keep each `label` to a few words
+and put the reasoning in that option's `description`.
 
-Reach for the tool rather than writing the options out yourself. Options typed into your reply as
-`a) b) c)` look like a picker and are not one — the user has to read them and then type an answer
-anyway. If the round fits, the tool is what they want; hand-written options are the fallback, not
-an equivalent.
+**The tool's own description says to reserve it for decisions you cannot resolve from sensible
+defaults, and to pick the obvious option and proceed instead. That rule does not apply to this
+phase.** An anvil2 interview round is the blocked-on-the-user case by construction: the plan is
+built on these answers, and every executor is held to them for the rest of the run with no way to
+revisit them. The marked option is a recommendation for the user to accept or reject — never a
+default you may take unilaterally. Recommending and proceeding is the exact failure this phase
+exists to prevent, so a round that ends without the user answering it has not happened.
 
-**Fall back to the lettered text format below** when the round does not fit the tool: a question
-that wants prose rather than a choice, a round wider than four questions (ask the four that
-unblock the most and hold the rest for the next round), a question with more than four real
-options, or a choice whose options need a paragraph each. Then letter them, so the round is still
-cheap to answer.
+Options typed into your reply as `a) b) c)` look like a picker and are not one — the user has to
+read them and then type an answer anyway. Hand-written options are the fallback, not an equivalent.
 
-Mark the recommendation and put it first, so the round stays one line to accept:
+A frontier wider than the tool's limits is not a reason to drop to text. The tool takes at most
+four questions per call and four options each: ask the four that unblock the most, and hold the
+rest for the next round. When a question has more than four real options, offer the four
+strongest — every question carries a free-text "Other", which is where a fifth option, or a
+correction to the question itself, goes.
 
-```
-Q1 — <short title>
-<one or two lines of question, and why it is being asked now>
-  a) <recommended option>   <- recommended
-  b) <the real alternative>
-  c) <the other real alternative>
+**Fall back to the lettered text format in Appendix A** only when the round genuinely does not fit
+the tool: a question that wants prose rather than a choice, or a choice whose options each need a
+paragraph to state. Mixed rounds split — the choices go through the tool, the prose question is
+asked alongside it.
 
-Q2 — <short title>
-<question>
-  a) <recommended option>   <- recommended
-  b) <alternative>
-
-Reply with the letters, e.g. `1a 2b`. Say "ok" or "all recommended" to take every
-recommendation. Anything you want to say in prose instead is fine — the letters are a
-shortcut, not a form.
-```
-
-That closing line goes in every text round. Without it the user does not know the whole round can
-be accepted in two characters, and a text round that reads like a form is the thing this format
-has to avoid.
+A rejected tool call is not a fallback trigger either. It means the user wants to clarify
+something: answer what they raise, then put the round through the tool again.
 
 Either way the round ends with the user's answers in hand and nothing else attempted — the
 tool returns them directly, the text format waits for the user's next message. **Never carry on
@@ -492,3 +484,31 @@ Reached when this command is run with no arguments.
      - abandon the plan and revert its commits in reverse order
 
 3. Never restart a task whose `state:` is `done`. The `commit:` field is the proof it landed.
+
+---
+
+## Appendix A — the lettered text round
+
+The fallback for phase 2, for a round that does not fit `AskUserQuestion`. Mark the
+recommendation and put it first, so the round stays one line to accept:
+
+```
+Q1 — <short title>
+<one or two lines of question, and why it is being asked now>
+  a) <recommended option>   <- recommended
+  b) <the real alternative>
+  c) <the other real alternative>
+
+Q2 — <short title>
+<question>
+  a) <recommended option>   <- recommended
+  b) <alternative>
+
+Reply with the letters, e.g. `1a 2b`. Say "ok" or "all recommended" to take every
+recommendation. Anything you want to say in prose instead is fine — the letters are a
+shortcut, not a form.
+```
+
+That closing line goes in every text round. Without it the user does not know the whole round can
+be accepted in two characters, and a text round that reads like a form is the thing this format
+has to avoid.

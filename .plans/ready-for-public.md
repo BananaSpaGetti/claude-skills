@@ -1,7 +1,7 @@
 ---
 slug: ready-for-public
 created: 2026-09-12
-status: approved
+status: executing
 branch: anvil2
 ---
 
@@ -87,9 +87,9 @@ Settled with the user in the interview:
 ## Tasks
 
 ### Task 1 — Rewrite README's Known gaps against what this run actually proved
-- state: todo
+- state: done
 - blocked-by: none
-- commit:
+- commit: b0049ec
 - risk: none
 - change: In `README.md`, rewrite the `## Known gaps` section. Replace the bullet
   "`anvil2` has never been run end to end" with a `[x]` bullet recording that it ran on this
@@ -109,9 +109,9 @@ Settled with the user in the interview:
   `sed -n '/## Known gaps/,/## License/p' README.md` reads correctly end to end.
 
 ### Task 2 — Record the go-public procedure in CLAUDE.md
-- state: todo
+- state: done
 - blocked-by: none
-- commit:
+- commit: 8dc159a
 - risk: none
 - change: Add a section to `CLAUDE.md` titled "Making this repository public" giving the ordered
   procedure: the `${CLAUDE_PLUGIN_ROOT}` test must pass first; then `gh repo edit
@@ -126,9 +126,9 @@ Settled with the user in the interview:
   and the do-not-flip sentence.
 
 ### Task 3 — Reconcile the two patimakorn descriptions and bump the version
-- state: todo
+- state: done
 - blocked-by: none
-- commit:
+- commit: 086904a
 - risk: none
 - change: The `patimakorn` description in `.claude-plugin/marketplace.json` carries a sentence
   that `plugins/patimakorn/.claude-plugin/plugin.json` does not: "The interview argues with the
@@ -143,9 +143,9 @@ Settled with the user in the interview:
   prints `desc match: True` and `versions: 0.9.0 0.9.0`.
 
 ### Task 4 — Fix the stale GitHub repo description
-- state: todo
+- state: done
 - blocked-by: none
-- commit:
+- commit: (no file change — remote metadata only)
 - risk: judgement-call
 - change: Run `gh repo edit BananaSpaGetti/claude-skills --description "<new>"` with a description
   that names `patimakorn` rather than `anvil`, says nine vendored engineering skills rather than
@@ -198,3 +198,9 @@ Settled with the user in the interview:
 ## Log
 
 - 2026-09-12 — plan written. First end-to-end `anvil2` run.
+- 2026-09-12 — tasks 1-3 dispatched to `execute.workflow.js` as three concurrent executors on
+  three disjoint files; all three returned `passed: true` with real verify stdout. Each verify was
+  re-run in the main loop before its commit. Committed b0049ec, 8dc159a, 086904a.
+- 2026-09-12 — task 4 done in the main loop. First attempt failed:
+  `HTTP 422: description cannot be more than 350 characters`. Re-run at 297 characters, accepted.
+  No file changed — the description lives in GitHub repo metadata.

@@ -158,11 +158,19 @@ correction to the question itself, goes.
 
 **Fall back to the lettered text format in Appendix A** only when the round genuinely does not fit
 the tool: a question that wants prose rather than a choice, or a choice whose options each need a
-paragraph to state. Mixed rounds split — the choices go through the tool, the prose question is
-asked alongside it.
+paragraph to state. Mixed rounds do not split. The tool returns its answers inside the same turn,
+but a prose question cannot be answered until the user sends another message — so "ask both" would end the
+round with the prose question hanging, which is exactly what the rule below forbids. Put the whole
+mixed round through Appendix A instead, or hold the prose question for the next round and send
+only the choices through the tool.
 
 A rejected tool call is not a fallback trigger either. It means the user wants to clarify
 something: answer what they raise, then put the round through the tool again.
+
+**Two things do end the tool's turn, so the interview cannot loop.** If `AskUserQuestion` is not
+available in this session, or the same round comes back rejected twice for the same reason, use
+Appendix A and say in one line why you switched. Phase 0 step 4 does not catch either case — it
+screens entrypoints with no human at all, not a live user whose client renders the picker badly.
 
 Either way the round ends with the user's answers in hand and nothing else attempted — the
 tool returns them directly, the text format waits for the user's next message. **Never carry on
@@ -234,7 +242,9 @@ the reason — this is what stops an executor re-litigating them.
 ### Task 1 — <title>
 - state: todo          # todo | doing | done | failed
 - blocked-by: none     # or: 2, 5
-- commit:              # filled in by the main loop after the task lands
+- commit:              # filled in by the main loop after the task lands; `none (no file change)`
+                       # for a task whose effect is not in the repo — remote metadata, a setting,
+                       # an external service. Never leave it empty on a `done` task.
 - risk: none           # or: destructive | binary-format | judgement-call
 - change: what to change, in which file
 - done-when: what "done" looks like
@@ -377,8 +387,14 @@ The script cannot read the filesystem, so everything it needs is in `args` — t
 `goal` and `context` verbatim rather than a path to the plan. Anything the interview settled that
 does not reach `args` is invisible to every executor.
 
-If `${CLAUDE_PLUGIN_ROOT}` does not resolve, pass the same script inline via the `script`
-parameter instead and say that you did; the path form is the one that has not been proven.
+If `${CLAUDE_PLUGIN_ROOT}` does not resolve, fall back to the `script` parameter — but read the
+script first, because "the same script" has to come from somewhere and the variable that locates
+the plugin is the thing that just failed. It is installed at
+`~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/workflows/execute.workflow.js`; list
+`~/.claude/plugins/cache/` to find the marketplace and version rather than guessing them. Read
+that file, pass its contents as `script`, and say that you did. If you cannot find it, stop and
+say so — do not reconstruct the scheduler from memory. The path form is the one that has not been
+proven, and neither has this recovery.
 
 **What the script does, so you can read its result:** it validates the graph (a cycle, an unknown
 `blocked-by`, or a risk marker aborts the run before any agent starts), then starts each task the
@@ -472,9 +488,17 @@ Reached when this command is run with no arguments.
    - **Exactly one in progress** (`approved`, `executing`, `reviewing`) — use it.
    - **Several** — show them and ask which.
 
-2. Check the working tree:
+2. **Read `status:` before looking at the tree. It decides which phase you resume into**, and
+   getting this wrong is how a half-reviewed plan gets pushed:
+   - `reviewing` — phase 6 was interrupted. **Resume at phase 6**, not phase 5. A `todo` task
+     whose blockers are `done` is not an invitation here; the review has not finished passing
+     judgement on the work those blockers produced.
+   - `approved` or `executing` — resume at phase 5.
+   - `blocked` — read the reason recorded in the plan and put it to the user before anything else.
+
+3. Then check the working tree:
    - **Clean** — report where the plan stands (tasks done / total, which tasks are unblocked now)
-     and continue at phase 5 with every remaining `todo` task whose blockers are all `done`.
+     and continue at the phase step 2 selected.
    - **Dirty because a merge or rebase is in progress** (`git status` says so) — use the
      `resolving-merge-conflicts` skill to finish it before touching the plan at all.
    - **Dirty** — expected after a failed task. Show `git status --short`, name the task
@@ -483,7 +507,11 @@ Reached when this command is run with no arguments.
      - `git checkout -- .` back to the last task commit and retry that task
      - abandon the plan and revert its commits in reverse order
 
-3. Never restart a task whose `state:` is `done`. The `commit:` field is the proof it landed.
+4. Never restart a task whose `state:` is `done`. The `commit:` field is the proof it landed —
+   including the literal value `none (no file change)`, which is proof for a task that changed no
+   file at all. An **empty** `commit:` on a `done` task is not proof of anything: it is equally
+   what an executor produces when it claims success and writes nothing. Treat it as unverified and
+   ask.
 
 ---
 

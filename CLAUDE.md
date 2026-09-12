@@ -140,8 +140,22 @@ Ordered procedure. Each step depends on the one before it.
    `/patimakorn:anvil2` run for this — it would gate going public on inventing and approving a
    throwaway plan, and any stumble in phases 1-4 would be indistinguishable from the variable
    failing.
-4. **`gh repo edit BananaSpaGetti/claude-skills --visibility public`**
-5. **Re-run the two anonymous `curl` commands** from README's Known gaps. Read the result
+
+   **If the probe fails, stop here. Do not reach step 5.** That is the flip, and it cannot be
+   undone for anything already forked or cloned; this is the gap README calls a blocker on going
+   public. Fix it first — either by making the path resolve, or by switching phase 5 to the inline
+   `script` parameter — then probe again.
+4. **Retire the privacy claims first, while the repo is still private.** Ticking one box later is
+   not enough, and step 5 is a keystroke with no agent in the loop — so anything left stale here
+   goes public and stays stale until somebody remembers. Commit these three together:
+   - `README.md`'s Install section: "The repository is private as of 2026-09-03..."
+   - this file's own "**The repository is private as of 2026-09-03**" paragraph, including the
+     prohibition it carries, which exists only until this moment
+   - README's Known-gaps private-repo box — but read it before ticking: it asks for a real
+     anonymous install, not just two `200`s, so it stays `[ ]` until step 6 and an actual install
+     have both happened. Reword it to say the repo is public and the install is still untried.
+5. **`gh repo edit BananaSpaGetti/claude-skills --visibility public`**
+6. **Re-run the two anonymous `curl` commands** from README's Known gaps. Read the result
    carefully rather than looking for the word "pass":
    - the raw URL is pinned to `/main/`, so a `200` proves only that *`main`* is readable — which
      is why step 1 comes first
@@ -149,13 +163,10 @@ Ordered procedure. Each step depends on the one before it.
      stale rather than real; wait and repeat
    - anonymous `api.github.com` allows 60 requests an hour and returns **403** when exhausted.
      403 is neither pass nor fail — it means try again later
-6. **Retire the privacy claims, all of them.** Ticking one box is not enough; these are wrong the
-   moment step 4 lands:
-   - README's Known-gaps private-repo box (and it needs a real anonymous install, not just two
-     `200`s — the box says so)
-   - `README.md`'s Install section: "The repository is private as of 2026-09-03..."
-   - this file's own "**The repository is private as of 2026-09-03**" paragraph, including the
-     prohibition it carries, which exists only until that moment
+7. **Then do the real install test**, from a client that is not signed in as the owner:
+   `/plugin marketplace add BananaSpaGetti/claude-skills` and
+   `/plugin install patimakorn@claude-skills`. Two `200`s prove the objects are readable; only
+   this proves the thing README's Install section promises. Tick the box after it.
 
-Step 4 is the user's own keystroke. An agent must not run it unasked — a fork or clone taken
+Step 5 is the user's own keystroke. An agent must not run it unasked — a fork or clone taken
 while the repo is public cannot be recalled.

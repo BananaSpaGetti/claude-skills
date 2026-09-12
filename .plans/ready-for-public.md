@@ -145,7 +145,7 @@ Settled with the user in the interview:
 ### Task 4 — Fix the stale GitHub repo description
 - state: done
 - blocked-by: none
-- commit:
+- commit: none (no file change)
 - risk: judgement-call
 - change: Run `gh repo edit BananaSpaGetti/claude-skills --description "<new>"` with a description
   that names `patimakorn` rather than `anvil`, says nine vendored engineering skills rather than
@@ -205,9 +205,18 @@ Settled with the user in the interview:
   `HTTP 422: description cannot be more than 350 characters`. Re-run at 297 characters, accepted.
   No file changed — the description lives in GitHub repo metadata, so task 4's `commit:` field is
   correctly empty and it has no revert handle. The previous description is preserved in this
-  plan's Context above; that is the only record of it.
+  plan's Context above; that is the only record of it. Its `commit:` field carries the literal
+  `none (no file change)`, a value round 2 added to the phase 3 schema precisely so a resuming
+  session can tell "done, nothing to commit" from an empty field, which is also what an executor
+  produces when it claims success and writes nothing.
 - 2026-09-12 — review round 1, `xhigh`, returned 15 findings, all against this plan's own output.
-  Ten were fixed. Three could not be fixed retroactively and are recorded here instead:
+  Ten were fixed. Two were declined, and are named here because a finding that silently evaporates
+  is indistinguishable from one that was missed: **(i)** task 4's GitHub description change has no
+  revert handle — true, and inherent to remote metadata; the previous text is preserved in this
+  plan's Context, which is the only record available. **(ii)** the plan schema cannot express a
+  task that changes no file — accepted as real but out of scope for a plan already executing; it
+  was fixed in round 2 by giving `commit:` the literal value `none (no file change)`. The
+  remaining three could not be fixed retroactively and are recorded here instead:
   **(a)** task 1's `verify:` was vacuous — `grep "ready-for-public\|CLAUDE_PLUGIN_ROOT\|404"`
   matched strings that were already in `README.md` before the task ran, so it returned 0 whether
   the edit happened or not. The executor's `passed: true` rested on a check that could not fail.
@@ -219,4 +228,9 @@ Settled with the user in the interview:
   gate did not include the repo's own gate.
   **(c)** `status:` was left at `executing` through the start of phase 6. A resume in that window
   would have read the plan as mid-phase-5, seen task 5 unblocked, and pushed to `main` with the
-  review never having run.
+  review never having run. Setting it to `reviewing` was recorded as the fix and **was not one** —
+  review round 2 found that Resume routed on working-tree state and never read `status:` at all,
+  so `reviewing` and `executing` behaved identically and the hazard stayed wide open. Round 2
+  fixed it properly, in the mechanism: Resume now reads `status:` first and sends `reviewing` to
+  phase 6. A false record of a fix is worse than an open finding — the next reader believes the
+  window is shut and never looks.

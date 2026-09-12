@@ -213,20 +213,24 @@ The single home for what is and is not verified. Nothing else in this file makes
 
 - [x] `claude plugin validate` passes on the marketplace and all five plugins
 - [ ] **The repository is private.** No stranger has installed anything here. The install above
-      was run twice by the owner while authenticated — under the plugin's former name on
-      2026-08-28 and under the current one on 2026-08-30 — which proves the manifest resolves and
-      the plugin unpacks, and proves nothing about anonymous access. Baseline, taken while
-      private, needing no `gh auth logout` — this is the logged-out test to re-run:
-      ```
-      curl -s -o /dev/null -w "%{http_code}" https://raw.githubusercontent.com/BananaSpaGetti/claude-skills/main/.claude-plugin/marketplace.json
-      curl -s -o /dev/null -w "%{http_code}" https://api.github.com/repos/BananaSpaGetti/claude-skills
-      ```
-      Both currently print `404`. Note what this does and does not prove: two `200`s show the
-      objects are anonymously readable, which is necessary but not sufficient — they exercise
-      neither `/plugin marketplace add` nor `/plugin install`, so a manifest that fetches but
-      fails to clone, validate or unpack would still pass. This box gets ticked only after the
-      repo is public, both commands print `200`, **and** the two install commands at the top of
-      this file have actually been run by someone who is not the owner.
+  was run twice by the owner while authenticated — under the plugin's former name on 2026-08-28
+  and under the current one on 2026-08-30 — which proves the manifest resolves and the plugin
+  unpacks, and proves nothing about anonymous access. Baseline, taken while private, needing no
+  `gh auth logout` — this is the logged-out test to re-run. Use `curl.exe`, not `curl`: in
+  PowerShell 5.1 the bare name is an alias for `Invoke-WebRequest`, which has no `-s` and no `-w`
+  and dies on a parameter-binding error that reads nothing like a failed check.
+
+  ```
+  curl.exe -s -o /dev/null -w "%{http_code}" https://raw.githubusercontent.com/BananaSpaGetti/claude-skills/main/.claude-plugin/marketplace.json
+  curl.exe -s -o /dev/null -w "%{http_code}" https://api.github.com/repos/BananaSpaGetti/claude-skills
+  ```
+
+  Both currently print `404`. Note what this does and does not prove: two `200`s show the objects
+  are anonymously readable, which is necessary but not sufficient — they exercise neither
+  `/plugin marketplace add` nor `/plugin install`, so a manifest that fetches but fails to clone,
+  validate or unpack would still pass. This box gets ticked only after the repo is public, both
+  commands print `200`, **and** the two install commands at the top of this file have actually
+  been run by someone who is not the owner.
 - [x] `anvil` run on a real repo, start to finish, twice — on this one. Both runs are in the
       history under `plan(<slug>)` commits; their plan files were deleted at close-out. The
       first (`anvil-self-test`, `b218a09..2950089`) went through all eight phases but was cut to
@@ -246,20 +250,23 @@ The single home for what is and is not verified. Nothing else in this file makes
       than a missing feature. `anvil2` is the attempt to make them bind.
 - [x] `anvil2` ran its interview, plan, execute and review phases on this repository on
       2026-09-12, under plan `ready-for-public`. **The split, which is the number that decides
-      whether it fixed `anvil`'s defect: 3 of 5 tasks went to the script, 2 stayed in the main
-      loop.** Both main-loop tasks were `risk: judgement-call` and exempt by phase 5 step 1 — one
-      mutates GitHub repo metadata, the other is a git write executors are forbidden. The three
+      whether it fixed `anvil`'s defect: of the 4 tasks that have executed, 3 went to the script
+      and 1 stayed in the main loop.** The plan's fifth task — merge and push — had not run when
+      this was written. Both main-loop tasks are `risk: judgement-call` and exempt by phase 5
+      step 1: one mutates GitHub repo metadata, the other is a git write executors are forbidden. The three
       dispatched tasks ran concurrently on three disjoint files and returned schema-validated
       results whose `verify:` commands were then re-run in the main loop before each commit.
       Two things this does not cover. It did **not** exercise `${CLAUDE_PLUGIN_ROOT}`: the run
       used an absolute `scriptPath` from a user-scope test copy of the command, not the published
-      plugin's resolution path. And "a commit per task" held for 3 of 5 — task 4 changed no file,
-      so it has no sha to revert.
+      plugin's resolution path. And "a commit per task" held for 3 of the 4 — task 4 changed no
+      file, so it has no sha to revert.
 - [ ] `${CLAUDE_PLUGIN_ROOT}` has never been exercised in a `Workflow({scriptPath})` call. Both
       `council` and `anvil2` depend on it resolving. If it does not, the fallback is passing the
-      script inline via the `script` parameter. Testing it needs three steps in order: push this
-      branch, run `claude plugin update` against the published copy, and try it from a fresh
-      session — the 2026-09-12 `anvil2` run used an absolute `scriptPath` and proved nothing here.
+      script inline via the `script` parameter. **The procedure for testing it lives in `CLAUDE.md`
+      under "Making this repository public" and only there** — an earlier draft of this bullet
+      carried its own shorter recipe, which drifted from that one inside a single commit by
+      omitting the merge and the marketplace refresh. The 2026-09-12 `anvil2` run used an absolute
+      `scriptPath` and proved nothing here.
       Treat it as a blocker on going public rather than a loose end — not because there is no
       fallback (`anvil2.md` tells the model to pass the script inline via the `script` parameter
       if the path does not resolve) but because that fallback has never been exercised either, so

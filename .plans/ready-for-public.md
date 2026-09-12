@@ -1,7 +1,7 @@
 ---
 slug: ready-for-public
 created: 2026-09-12
-status: reviewing
+status: done
 branch: anvil2
 ---
 
@@ -137,8 +137,9 @@ Settled with the user in the interview:
   it occupies in the marketplace entry, so the two read identically. Then raise `version` from
   `0.8.0` to `0.9.0` in **both** files. Do not reformat either JSON file beyond the fields being
   changed — keep 2-space indent and the existing key order.
-- done-when: the two descriptions are byte-identical, both files say `"version": "0.9.0"`, and
-  `git diff --stat` shows only those two files with a small line count.
+- done-when: the two descriptions are byte-identical, both files carry the *same* `version`, and
+  `git diff --stat` shows only those two files with a small line count. This task raised it to
+  `0.9.0`; do not pin that literal here, for the reason given under `verify:` below.
 - verify: `python -c "import json;a=json.load(open('.claude-plugin/marketplace.json',encoding='utf-8'));b=json.load(open('plugins/patimakorn/.claude-plugin/plugin.json',encoding='utf-8'));p=[x for x in a['plugins'] if x['name']=='patimakorn'][0];print('desc match:',p['description']==b['description']);print('versions:',p['version'],b['version'])"`
   prints `desc match: True`, and the two versions agree with each other. **Do not pin the number
   here.** This task set it to `0.9.0`; later review rounds edited the plugin's command files and

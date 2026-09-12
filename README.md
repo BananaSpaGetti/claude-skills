@@ -209,7 +209,9 @@ that the Claude.ai marketplace sync requires kebab-case, so the lowercase form i
 
 ## Known gaps
 
-The single home for what is and is not verified. Nothing else in this file makes status claims.
+The home for what is and is not verified. Prose elsewhere in this file describes what the tools
+do and what past runs measured; **this section is where the ticks live, and a status claim that
+contradicts a box here is the stale one.**
 
 - [x] `claude plugin validate` passes on the marketplace and all five plugins
 - [ ] **The repository is private.** No stranger has installed anything here. The install above
@@ -272,6 +274,23 @@ The single home for what is and is not verified. Nothing else in this file makes
       fallback (`anvil2.md` tells the model to pass the script inline via the `script` parameter
       if the path does not resolve) but because that fallback has never been exercised either, so
       a stranger's first run would be testing both the failure and the recovery at once.
+- [ ] **Resume is not yet safe against an interrupted phase 6, in either command.** Three review
+  rounds narrowed this and none closed it. `status: executing` is now stamped by phase 5 but never
+  committed, so Resume's own `git checkout -- .` erases it; `anvil.md` got the status routing but
+  not the dirty-tree-during-review case, the `blocked` selection bullet, or the stamp; neither
+  command records which one wrote a plan, so either can pick up the other's and re-dispatch work
+  that already landed; and `planning` is in no in-progress set, so a plan interrupted during
+  phase 3 is reported as nothing to resume. The shape of the real fix is a plan-schema change —
+  a provenance field, a `blocked-by: review` sentinel so a task can state that constraint once
+  instead of every code path re-deriving it, and a persisted `resumeFromRunId` so a resumed
+  phase 5 replays from cache rather than re-running every dispatch live.
+- [ ] **The `${CLAUDE_PLUGIN_ROOT}` probe may not test what phase 5 does.** In phase 5 the literal
+  sits inside a plugin command file, so the plugin loader substitutes it. The probe in CLAUDE.md
+  is pasted into a fresh session by hand, which the model emits as an ordinary string. If
+  `Workflow` does not expand it at call time, the probe reports a path failure for a variable that
+  in fact resolves — and the procedure makes a failed probe a hard stop, so a false negative would
+  gate the repo shut on the one test it calls a blocker. Check which expansion path applies before
+  trusting either outcome.
 - [ ] `council.workflow.js` has been run once, from the author's user-scope copy. The published
       copy resolves its script through `${CLAUDE_PLUGIN_ROOT}` and that path has not been exercised.
 - [ ] The eval suite has never been executed — `claude plugin eval` is in early access and prints

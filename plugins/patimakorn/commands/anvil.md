@@ -329,7 +329,10 @@ Reached when this command is run with no arguments.
 
 3. Check the working tree:
    - **Clean** — report where the plan stands (tasks done / total, which wave is next) and continue
-     at the phase step 2 selected.
+     at the phase step 2 selected. When that is phase 5, resume **at the first `todo` task whose
+     blockers are all `done`** — never at a task already `done`. Phase 5's wave rule is written for
+     a fresh pass and a `done` task trivially satisfies it, so without this scope a resume
+     re-dispatches executors over work that already landed.
    - **Dirty because a merge or rebase is in progress** (`git status` says so) — use the
      `resolving-merge-conflicts` skill to finish it before touching the plan at all.
    - **Dirty** — expected after a mid-wave failure. Show `git status --short`, name the task

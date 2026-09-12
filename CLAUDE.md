@@ -111,3 +111,18 @@ without raising its `version` leaves every installed copy stale, and the updater
 contents raises that plugin's `version` in **both** `plugins/<name>/.claude-plugin/plugin.json`
 and its entry in `.claude-plugin/marketplace.json`. The two must always agree, or
 `claude plugin validate` fails.
+
+## Making this repository public
+
+Ordered procedure, in this order:
+
+1. The `${CLAUDE_PLUGIN_ROOT}` test must pass first — push, run
+   `claude plugin update patimakorn`, start a fresh session, run `/patimakorn:anvil2`, and
+   confirm phase 5's `Workflow` `scriptPath` resolves.
+2. `gh repo edit BananaSpaGetti/claude-skills --visibility public`
+3. Re-run both anonymous `curl` commands from README's Known gaps and confirm they return
+   `200` where they returned `404`.
+4. Tick the private-repo box in README's Known gaps.
+
+Step 2 is the user's own keystroke. An agent must not run it unasked — a fork or clone taken
+while the repo is public cannot be recalled.

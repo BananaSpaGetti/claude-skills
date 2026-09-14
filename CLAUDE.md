@@ -128,23 +128,30 @@ Ordered procedure. Each step depends on the one before it.
    ```
    `claude plugin update` alone resolves against the *cached* manifest and will happily print
    `already at the latest version` while serving the copy you just replaced.
-3. **Prove `${CLAUDE_PLUGIN_ROOT}` resolves.** From a **fresh session** — plugins load at session
-   start — run the smallest thing that exercises exactly that and nothing else:
+3. **Prove a stranger's phase 5 can start.** From a **fresh session** — plugins load at session
+   start — run the smallest thing that exercises the real mechanism and nothing else. `Read` the
+   installed script, then hand its contents to `Workflow`:
    ```
-   Workflow({ scriptPath: "${CLAUDE_PLUGIN_ROOT}/workflows/execute.workflow.js",
+   Read("${CLAUDE_PLUGIN_ROOT}/workflows/execute.workflow.js")
+   Workflow({ script: "<its contents>",
               args: { slug: "probe", goal: "", context: "", tasks: [] } })
    ```
    The script rejects an empty `tasks` array by design, so the **pass condition is the error it
-   returns**: `anvil-execute: args.tasks is empty` means the path resolved and the script ran.
-   A path-resolution failure looks different and names the path. Do not use a whole
+   returns**: `anvil-execute: args.tasks is empty` means the file was found and the script ran.
+   A failed `Read` fails this step; so does any error naming a path. Do not use a whole
    `/patimakorn:anvil2` run for this — it would gate going public on inventing and approving a
-   throwaway plan, and any stumble in phases 1-4 would be indistinguishable from the variable
-   failing.
+   throwaway plan, and any stumble in phases 1-4 would be indistinguishable from a real failure.
+
+   **This step is about `Read`, not about `${CLAUDE_PLUGIN_ROOT}`.** The variable expands
+   correctly inside a plugin command file — verified 2026-09-14, a fresh session printed the
+   substituted absolute path. What fails is handing that path to `Workflow` as `scriptPath`:
+   the tool takes a path only inside the working directory or an `--add-dir` directory, and a
+   plugin's install directory is neither. Both commands therefore read the script and pass it as
+   `script`. Do not "fix" a future failure here by reintroducing `scriptPath`, and never by
+   copying the script into the repository under test.
 
    **If the probe fails, stop here. Do not reach step 5.** That is the flip, and it cannot be
-   undone for anything already forked or cloned; this is the gap README calls a blocker on going
-   public. Fix it first — either by making the path resolve, or by switching phase 5 to the inline
-   `script` parameter — then probe again.
+   undone for anything already forked or cloned.
 4. **Retire the privacy claims first, while the repo is still private.** Ticking one box later is
    not enough, and step 5 is a keystroke with no agent in the loop — so anything left stale here
    goes public and stays stale until somebody remembers. Commit these three together:

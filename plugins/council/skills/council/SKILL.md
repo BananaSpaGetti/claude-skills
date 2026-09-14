@@ -39,11 +39,12 @@ question is the single biggest waste of a council.
 
 ## Running it
 
-Call the `Workflow` tool with the bundled script:
+The script ships with this plugin, at `${CLAUDE_PLUGIN_ROOT}/skills/council/council.workflow.js`.
+**Read that file with the `Read` tool, then pass its contents to `Workflow` as `script`.**
 
 ```
 Workflow({
-  scriptPath: "${CLAUDE_PLUGIN_ROOT}/skills/council/council.workflow.js",
+  script: "<the contents of council.workflow.js, verbatim>",
   args: {
     question: "<the decision, stated as a choice>",
     context: "<fixed constraints, relevant file paths, what was already rejected>"
@@ -52,6 +53,18 @@ Workflow({
 ```
 
 `args` also accepts a bare string when there is no context worth passing.
+
+**Do not pass the plugin's path as `scriptPath`.** `Workflow` accepts a path only when it is
+inside the working directory or a directory added with `--add-dir`, and a plugin's install
+directory is neither, so the path form is refused with:
+
+```
+scriptPath must be a script path this tool returned, or a file you can already read
+```
+
+Reading the file first does not lift that, and it is not a `${CLAUDE_PLUGIN_ROOT}` failure — the
+variable expands correctly in this file; the tool declines the expanded path. Measured on
+2026-09-14. If the `Read` fails, say so and stop rather than reconstructing the script.
 
 Invoking this skill **is** the user's opt-in to multi-agent orchestration — run the
 workflow without asking again. It runs in the background; a task notification arrives

@@ -359,9 +359,12 @@ from an approved plan nobody has started.
 
 ### 2. Run the script
 
+The script ships with this plugin, at `${CLAUDE_PLUGIN_ROOT}/workflows/execute.workflow.js`.
+**Read that file with the `Read` tool, then pass its contents to `Workflow` as `script`.**
+
 ```
 Workflow({
-  scriptPath: "${CLAUDE_PLUGIN_ROOT}/workflows/execute.workflow.js",
+  script: "<the contents of execute.workflow.js, verbatim>",
   args: {
     slug:    "<the plan's slug>",
     goal:    "<the plan's Goal section, verbatim>",
@@ -391,14 +394,25 @@ The script cannot read the filesystem, so everything it needs is in `args` — t
 `goal` and `context` verbatim rather than a path to the plan. Anything the interview settled that
 does not reach `args` is invisible to every executor.
 
-If `${CLAUDE_PLUGIN_ROOT}` does not resolve, fall back to the `script` parameter — but read the
-script first, because "the same script" has to come from somewhere and the variable that locates
-the plugin is the thing that just failed. It is installed at
-`~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/workflows/execute.workflow.js`; list
-`~/.claude/plugins/cache/` to find the marketplace and version rather than guessing them. Read
-that file, pass its contents as `script`, and say that you did. If you cannot find it, stop and
-say so — do not reconstruct the scheduler from memory. The path form is the one that has not been
-proven, and neither has this recovery.
+**Do not pass the plugin's path as `scriptPath`.** `Workflow` accepts a path only when it is
+inside the working directory or a directory added with `--add-dir`, and a plugin's install
+directory is neither, so the path form is refused with:
+
+```
+scriptPath must be a script path this tool returned, or a file you can already read
+```
+
+Reading the file first does not lift that. Nor is this a `${CLAUDE_PLUGIN_ROOT}` failure — the
+variable expands correctly in this file; the tool declines the expanded path. Both halves were
+measured on 2026-09-14, after a run had already worked around it by copying the script into the
+repository under test, which is exactly the litter this avoids.
+
+If the `Read` fails, say so and stop — do not reconstruct the scheduler from memory, and do not
+copy it into the user's repository.
+
+**The result names a `scriptPath` inside this session's own directory. That is the path to reuse**
+— pass it back with `resumeFromRunId` for a retry (step 5), rather than sending the whole script
+again.
 
 **What the script does, so you can read its result:** it validates the graph (a cycle, an unknown
 `blocked-by`, or a risk marker aborts the run before any agent starts), then starts each task the
@@ -441,8 +455,10 @@ If the cause is not obvious from the returned `verifyStdout` and your own verify
 - go back and amend the plan, re-planning the remaining tasks
 - abandon — `git revert` the task commits made so far, in reverse order
 
-To retry after a fix, re-invoke the workflow with `resumeFromRunId` set to the run id from the
-first result: unchanged tasks replay from cache and only the edited one runs live.
+To retry after a fix, re-invoke the workflow with the `scriptPath` and run id the first result
+named, as `scriptPath` plus `resumeFromRunId`: unchanged tasks replay from cache and only the
+edited one runs live. That returned path is inside the session directory and is accepted; the
+plugin's own path still is not.
 
 Do not start work that depends on a failed task.
 

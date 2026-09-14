@@ -263,17 +263,18 @@ contradicts a box here is the stale one.**
       used an absolute `scriptPath` from a user-scope test copy of the command, not the published
       plugin's resolution path. And "a commit per task" held for 3 of the 4 — task 4 changed no
       file, so it has no sha to revert.
-- [ ] `${CLAUDE_PLUGIN_ROOT}` has never been exercised in a `Workflow({scriptPath})` call. Both
-      `council` and `anvil2` depend on it resolving. If it does not, the fallback is passing the
-      script inline via the `script` parameter. **The procedure for testing it lives in `CLAUDE.md`
-      under "Making this repository public" and only there** — an earlier draft of this bullet
-      carried its own shorter recipe, which drifted from that one inside a single commit by
-      omitting the merge and the marketplace refresh. The 2026-09-12 `anvil2` run used an absolute
-      `scriptPath` and proved nothing here.
-      Treat it as a blocker on going public rather than a loose end — not because there is no
-      fallback (`anvil2.md` tells the model to pass the script inline via the `script` parameter
-      if the path does not resolve) but because that fallback has never been exercised either, so
-      a stranger's first run would be testing both the failure and the recovery at once.
+- [x] **`Workflow({scriptPath})` cannot reach a plugin's own files, and neither command tries any
+      more.** Settled 2026-09-14. `${CLAUDE_PLUGIN_ROOT}` was never the problem: a fresh session
+      printed the substituted absolute path
+      (`~/.claude/plugins/cache/claude-skills/patimakorn/0.12.0/workflows/execute.workflow.js`).
+      `Workflow` is — it takes a path only inside the working directory or an `--add-dir`
+      directory, and refuses anything else with `scriptPath must be a script path this tool
+      returned, or a file you can already read`. Reading the file first does not lift it. So a
+      stranger's first `/patimakorn:anvil2` would have failed at phase 5, every time, and
+      `council` with it. Both now `Read` the bundled script and pass its contents as `script`,
+      measured working the same day. The 2026-09-13 `anvil2` run reached phase 5 only by copying
+      the script into the repository under test; the fixed commands forbid that by name, because
+      it leaves an untracked file in someone else's repo.
 - [ ] **Resume is not yet safe against an interrupted phase 6, in either command.** Three review
   rounds narrowed this and none closed it. `status: executing` is now stamped by phase 5 but never
   committed, so Resume's own `git checkout -- .` erases it; `anvil.md` got the status routing but
@@ -284,15 +285,14 @@ contradicts a box here is the stale one.**
   a provenance field, a `blocked-by: review` sentinel so a task can state that constraint once
   instead of every code path re-deriving it, and a persisted `resumeFromRunId` so a resumed
   phase 5 replays from cache rather than re-running every dispatch live.
-- [ ] **The `${CLAUDE_PLUGIN_ROOT}` probe may not test what phase 5 does.** In phase 5 the literal
-  sits inside a plugin command file, so the plugin loader substitutes it. The probe in CLAUDE.md
-  is pasted into a fresh session by hand, which the model emits as an ordinary string. If
-  `Workflow` does not expand it at call time, the probe reports a path failure for a variable that
-  in fact resolves — and the procedure makes a failed probe a hard stop, so a false negative would
-  gate the repo shut on the one test it calls a blocker. Check which expansion path applies before
-  trusting either outcome.
-- [ ] `council.workflow.js` has been run once, from the author's user-scope copy. The published
-      copy resolves its script through `${CLAUDE_PLUGIN_ROOT}` and that path has not been exercised.
+- [x] **The old probe did not test what phase 5 does — and the worry was backwards.** It read as a
+  risk of a *false negative* gating the repo shut. The measurement went the other way: the
+  variable resolves, and the call it feeds is what fails. CLAUDE.md's step 3 now probes the
+  mechanism the commands actually use (`Read`, then `script`), with the same pass condition —
+  the script's own `anvil-execute: args.tasks is empty`.
+- [ ] `council.workflow.js` has been run once, from the author's user-scope copy. Its published
+      copy has still never been run — the delivery mechanism is now the same one `anvil2` was
+      measured on, but that is an argument by analogy, not a run.
 - [ ] The eval suite has never been executed — `claude plugin eval` is in early access and prints
       a notice instead of running.
 

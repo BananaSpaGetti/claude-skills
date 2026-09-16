@@ -67,26 +67,39 @@ the kind of mismatch that ships unnoticed. Treat any warning as a failure.
 `claude plugin validate plugins/<name>` does not surface drift at all: it validates that
 manifest in isolation and prints a clean pass. Only `claude plugin validate .` compares the two.
 
-## `plugins/patimakorn/workflows/` is executable, so it has a test
+## `plugins/patimakorn/workflows/` is executable, so it has tests
+
+Two scripts live here, and each exists because the instruction it replaced was measured not
+binding. Treat both as code, not documentation.
 
 `execute.workflow.js` is phase 5 of `/patimakorn:anvil`: the script that dispatches one executor
-subagent per task. It exists because the same instruction written as prose in `anvil.md` was
-followed once in twenty-two chances. Treat it as code, not documentation.
+subagent per task. The same instruction written as prose was followed once in twenty-two chances.
+
+`orient.workflow.js` is phase 1: the script that dispatches one read-only `Explore` subagent per
+orientation question and returns the files they found. The prose it replaced said "the floor is
+one dispatch", and a 43-executor run dispatched zero. The script refuses an empty question list,
+which is that floor written where it cannot be forgotten. Added 2026-09-16 and, as of that date,
+never run on a real plan — README's Known gaps says so.
 
 Two runtime constraints are load-bearing and easy to break by accident. The workflow runtime gives
 scripts **no filesystem and no Node API**, so the plan is parsed by the main loop and arrives via
 `args` — do not add a file read. And `Date.now()`, `new Date()` and `Math.random()` **throw**,
 because they would break resume; stamp timestamps after the workflow returns.
 
-`execute.workflow.test.js` stubs the agent and asserts ordering, concurrency, stranded dependents,
-cycle detection, unknown blockers and the risk-marker guard. It needs no network and costs nothing:
+Each script has a test beside it that stubs the agent, needs no network and costs nothing.
+`execute.workflow.test.js` asserts ordering, concurrency, stranded dependents, cycle detection,
+unknown blockers and the risk-marker guard; `orient.workflow.test.js` asserts the dispatch shape
+(`Explore`, `sonnet`, schema), the empty-list refusal, that a dead agent is counted rather than
+hidden, and the file union:
 
 ```
 node plugins/patimakorn/workflows/execute.workflow.test.js
+node plugins/patimakorn/workflows/orient.workflow.test.js
 ```
 
-Run it after any edit to the script, alongside the two validate commands below. A change to the
-scheduler that passes validation and fails this test is not done.
+Run the matching test after any edit to a script, alongside the two validate commands below. A
+change that passes validation and fails its test is not done. The orient test earned its keep on
+the day it was written: it caught the script counting a dead agent as answered.
 
 ## Validate before every commit
 

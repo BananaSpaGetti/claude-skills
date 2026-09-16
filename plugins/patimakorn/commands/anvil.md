@@ -50,7 +50,7 @@ accident* never is. So decide, every time, from this table:
 
 | Dispatch | `subagent_type` | `model` | Why |
 |---|---|---|---|
-| Phase 1 orient — locate files, trace how a flow is wired, find callers | `Explore` | `sonnet` | Retrieval. The judgement is in reading the result, not producing it. |
+| Phase 1 orient — locate files, trace how a flow is wired, find callers | `Explore`, via `orient.workflow.js` | `sonnet`, set by the script | Retrieval. The judgement is in reading the result, not producing it. The script passes `model: sonnet` itself, so this row is what it does rather than what you must remember. |
 | Phase 2 — read a file, a config, or the git history to settle one fact | `Explore` | `sonnet` | Retrieval. |
 | Phase 2 — summarize sources already identified | `general-purpose` | `sonnet` | Summarization of text someone else chose. |
 | Phase 2 — research where source quality is the question: contradictory figures, primary vs secondary, whether a standard still applies | `general-purpose` | *omit* | The plan is built on the answer. Weighing sources is the capability being paid for. |
@@ -116,14 +116,49 @@ Read those yourself — they are small, bounded, and you need them in context to
 interview. **Which files the work touches is not on that list**: that is a question, and
 questions are dispatched.
 
-**Everything else in this phase is dispatched.** Any question of the form "where is X handled",
-"what calls Y", "how does this repo do Z", "which files does this work touch" goes to an
-`Explore` agent at `model: "sonnet"` (Rule 1), and several such questions go out in **one message
-so they run concurrently**. Do not read the repo yourself to answer them: what you read here you
-carry for the remaining seven phases, and this is the phase where that habit starts.
+**Everything else in this phase goes through a script.** Any question of the form "where is X
+handled", "what calls Y", "how does this repo do Z", "which files does this work touch" is
+answered by `Explore` agents that the script dispatches — not by you reading the repository. What
+you read here you carry for the remaining seven phases, and this is the phase where that habit
+starts. The prose form of this rule said "the floor is one dispatch"; a 43-executor run dispatched
+zero, so the floor is now the script refusing an empty question list.
 
-The floor is one dispatch. A repo where you genuinely need no exploration is a repo you have
-already mapped in this conversation — say so, and move on.
+### Run the orient script
+
+Compose the questions — every fact the interview will need that lives in the repository. "Which
+files does this work touch" is always one. Then read the script with the `Read` tool and pass its
+contents to `Workflow` as `script`, the same way phase 5 does:
+
+```
+Workflow({
+  script: "<the contents of ${CLAUDE_PLUGIN_ROOT}/workflows/orient.workflow.js, verbatim>",
+  args: {
+    request:   "<the requested work, verbatim>",
+    questions: ["which files does this work touch, and what does each do",
+                "where is X handled",
+                "..."],
+    hints:     ["path/the/user/named.py"]     // omit if the user named no paths
+  }
+})
+```
+
+**Do not pass the plugin's path as `scriptPath`** — `Workflow` refuses any path outside the
+working directory, and reading the file first does not lift that (see phase 5 for the measured
+error). The run result names a `scriptPath` inside the session directory; that one is reusable.
+
+The script dispatches one `Explore` agent per question at `model: sonnet` (Rule 1's row for this
+phase, now written into the script rather than left to you), all concurrent, each returning
+`files` (path and why, every path verified to exist), `summary`, and `unknowns`. It throws on an
+empty `questions` list rather than dispatching nothing.
+
+**What the result is for.** `files` is the union of every file any answer named — the shape the
+plan's `## Context` section wants, and the only thing that may go there (phase 3). `dispatched`
+is the number phase 7 reports. `unknowns` are prerequisites for the interview: a question the
+repository could not settle is one the user has to.
+
+Do not run the script on a repository you have already mapped in this conversation — say so, and
+move on, and phase 7 reports `orient: skipped, already mapped` rather than a count. That is the
+only exemption, and it is not "the repo looked small".
 
 ## Phase 2 — Interview
 
@@ -223,6 +258,7 @@ slug: <slug>
 created: <YYYY-MM-DD>
 status: planning        # planning | approved | executing | reviewing | done | blocked
 branch: <branch name>
+orient: <runId>, <N> dispatched   # from the phase 1 script's result; or `skipped, already mapped`
 ---
 
 # <Title>
@@ -232,7 +268,10 @@ What is being built, from the user's perspective. One paragraph.
 
 ## Context
 Repo-relative paths to every file that matters, one line each on what it is and why it matters
-here, plus the format/framework/engine facts established during the interview.
+here — **pasted from the orient script's `files`, not retyped and not extended from anything you
+read yourself** — plus the format/framework/engine facts established during the interview. A path
+here that no orient answer named is a path that came from the main loop reading the repository,
+which is what phase 1 exists to prevent.
 
 ## Decisions
 Every decision settled in the interview, flat list. Include options considered and rejected, with
@@ -314,6 +353,9 @@ Show the user, short:
 - which tasks are marked `risk:` and will therefore **not** go to the script, and will run in this
   conversation instead
 - anything you had to assume because the interview did not settle it
+- **the `orient:` line from the frontmatter** — the run id and how many questions the phase 1
+  script dispatched, or `skipped, already mapped`. An empty line here means phase 1 did not run
+  and `## Context` was written from the main loop's own reading; say so rather than hiding it
 - **any file or directory this run would create outside `.plans/`** — an ADR directory the repo
   does not yet have, or a glossary that does not yet exist. Name the path. Creating a new
   top-level convention in someone's repository is theirs to approve, not yours to assume.
@@ -496,6 +538,11 @@ it was not fixed.
   every branch at once and the plan is reported as nothing to resume. Three plans in one
   repository were found at `complete` on 2026-09-16, and they read as finished only by luck.
 - Report, short, in the language the user is writing to you in:
+  - **how many orientation questions phase 1 dispatched** — the orient script's return value
+    carries `dispatched`, so this is a count, not an impression. `0` is not a possible value: the
+    script refuses an empty list. The honest alternatives are a number, or `skipped, already
+    mapped` with the reason. A report that cannot produce either is a run that read the repository
+    into the main conversation instead, and this line is where that becomes visible.
   - tasks done / total, and **how many went to the script versus stayed in this conversation** —
     the script's return value carries `dispatched`, so this is a count, not an impression. Name
     each main-loop task and which line of phase 5 step 1 exempted it. A run where that list is
@@ -524,6 +571,10 @@ Reached when this command is run with no arguments.
    - **Exactly one in progress** (`approved`, `executing`, `reviewing`) — use it.
    - **One at `blocked`** — that is not "nothing in progress". Phase 7 writes it with a reason;
      surface that reason first and let the user decide, rather than asking what to build.
+   - **One at `planning`** — phase 3 was interrupted. Read its `orient:` line. Filled: phase 1 ran
+     and its result is in `## Context`, so pick up at phase 3 with the Decisions already recorded.
+     Empty: phase 1 never ran, and whatever is in `## Context` came from the main loop reading
+     the repository — start again at phase 1, and say that the earlier Context is being replaced.
    - **Several** — show them and ask which.
    - **One at `approved` or `executing` whose tasks are all `done`** — phase 5 finished and phase 6
      was never reached, or the close-out did not land. Do not re-enter phase 5 looking for work:

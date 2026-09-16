@@ -111,10 +111,18 @@ confirmed findings per round for under 8% of that run's cost. The phase 5 execut
 override at all: `patimakorn:executor` pins `model: sonnet` in its own frontmatter, and a
 workflow-dispatched agent honours it.
 
-The scheduler has a test — `plugins/patimakorn/workflows/execute.workflow.test.js`, 22 assertions
-over ordering, concurrency, stranded dependents, cycles and the risk-marker guard. Run it with
-`node plugins/patimakorn/workflows/execute.workflow.test.js`; it stubs the agent, so it costs
-nothing and needs no network.
+Phase 1 got the same treatment on 2026-09-16, for the same reason: the same 43-executor run
+dispatched zero `Explore` agents against an instruction that said "the floor is one dispatch". So
+orientation is `plugins/patimakorn/workflows/orient.workflow.js` — the main loop composes the
+questions, the script dispatches one read-only `Explore` agent per question and refuses an empty
+list, and its `files` is the only thing the plan's `## Context` may be written from. Unlike the
+execute script, this one has not yet been run on a real plan; Known gaps says so.
+
+Both scripts have tests — `execute.workflow.test.js` (22 assertions over ordering, concurrency,
+stranded dependents, cycles and the risk-marker guard) and `orient.workflow.test.js` (23 over the
+dispatch shape, the empty-list refusal, dead-agent accounting and the file union). Each stubs the
+agent, so they cost nothing and need no network:
+`node plugins/patimakorn/workflows/<name>.workflow.test.js`.
 
 One command ships. What has and has not been proven about it is tracked in Known gaps — start
 there.
@@ -257,11 +265,16 @@ contradicts a box here is the stale one.**
       `execute.workflow.js` fixed it: measured across the 2026-09-13 C-port run, 43 of 43 eligible
       tasks went to the script and the one main-loop task was the one marked `risk: judgement-call`.
       On 2026-09-16 the two commands were folded into one and the prose version removed.
-- [ ] **Phase 1's dispatch floor still does not bind, and that is the remaining half.** The same
-      43-executor run dispatched **zero** `Explore` agents, though phase 1 says "the floor is one
-      dispatch". Phase 5 got a script; phase 1 is still prose, and prose was measured not binding.
-      The obvious shapes — requiring the count to be stated before phase 2 opens, or moving
-      orientation into a script of its own — have not been tried.
+- [ ] **Phase 1 now has a script, and it has never been run.** The 43-executor run dispatched
+      **zero** `Explore` agents, though phase 1 said "the floor is one dispatch" — the same
+      instruction-does-not-bind defect phase 5 had, on the other side of the interview. On
+      2026-09-16 orientation moved into `plugins/patimakorn/workflows/orient.workflow.js`: the main
+      loop composes the questions, the script dispatches one `Explore` agent per question at
+      `sonnet` and refuses an empty list, and its `files` is the only thing the plan's `## Context`
+      may be written from. The plan frontmatter records the run as `orient:` and phase 7 reports
+      the count the way it reports phase 5's. The scheduler test covers it (23 assertions) but no
+      real plan has been built through it yet, so this box stays open until one has and the
+      `orient:` line on disk says a number.
 - [x] The script version ran its interview, plan, execute and review phases on this repository on
       2026-09-12, under plan `ready-for-public`. **The split, which is the number that decides
       whether it fixed the prose version's defect: of the 4 tasks that have executed, 3 went to the script

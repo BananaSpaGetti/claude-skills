@@ -14,8 +14,9 @@ the only version. The dispatch is `plugins/patimakorn/workflows/execute.workflow
 no code path in which this conversation does a delegable task itself.
 
 **Running this command is your authorisation to dispatch agents.** Do not ask again before each
-one. Two places still stop and wait for the user: the interview rounds (phase 2) and the single
-plan approval (phase 4). Nowhere else.
+one. Three places still stop and wait for the user: the interview rounds (phase 2), the single
+plan approval (phase 4), and the acceptance question before the plan is marked done (phase 7).
+Nowhere else.
 
 Requested work: $ARGUMENTS
 
@@ -529,6 +530,34 @@ it was not fixed.
 
 ## Phase 7 — Close out
 
+### 1. Ask whether this is what was asked for
+
+Every earlier gate checks something narrower than the request. Phase 5 checks each task against
+its own `verify:`; phase 6 checks the code for defects; the report below counts things. None of
+them asks whether the finished work is the thing the user wanted, and a plan that misread the
+request at phase 3 passes all three — every task verified, review clean, numbers complete, wrong
+deliverable. The person who can answer is the one who asked, so this is the third place the
+command stops.
+
+Put the plan's `## Goal` section, verbatim, beside a plain statement of what now exists — what
+was built, where it is, how to run or see it. Two or three sentences; the report in step 3 has the
+detail. Then ask with `AskUserQuestion`, one question, options first and marked as in phase 2:
+
+- **Yes, this is it** — proceed to step 2 as `done`.
+- **Partly — something is missing or different** — take the free-text answer, record it in the
+  plan's Log, set `status: blocked` with `reason: does not match Goal — <their words>`, commit,
+  and report. Do not start fixing: a mismatch at this point is a planning defect, and re-planning
+  is a new interview, not a phase 5 retry. Say that plainly and stop.
+- **No** — same as partly.
+
+The question is about fit, not quality. Do not fold "were there bugs" into it — phase 6 owns that.
+And do not answer it yourself from the plan: the plan is what may have been wrong.
+
+A run that reaches this step with no interactive user (phase 0 step 4 should have stopped it long
+before) writes `status: blocked` with `reason: acceptance not asked`, never `done`.
+
+### 2. Record
+
 - Set `status: done`, or `status: blocked` with the reason. Commit the plan file.
 
   **Write one of the six words the frontmatter names and nothing else** — `planning`, `approved`,
@@ -537,7 +566,12 @@ it was not fixed.
   against that set, so a synonym is not a smaller mistake than a wrong word — it falls out of
   every branch at once and the plan is reported as nothing to resume. Three plans in one
   repository were found at `complete` on 2026-09-16, and they read as finished only by luck.
-- Report, short, in the language the user is writing to you in:
+### 3. Report
+
+- Short, in the language the user is writing to you in:
+  - **the acceptance answer from step 1, in the user's words** — `accepted`, or what they said was
+    missing. This line is the only place in the whole run where the outcome is compared to the
+    request, so it goes first.
   - **how many orientation questions phase 1 dispatched** — the orient script's return value
     carries `dispatched`, so this is a count, not an impression. `0` is not a possible value: the
     script refuses an empty list. The honest alternatives are a number, or `skipped, already

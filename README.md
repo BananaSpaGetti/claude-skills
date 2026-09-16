@@ -30,8 +30,11 @@ A plugin command is addressed as `<plugin>:<command>`, so the command below is
 ```
 
 Eight phases in one conversation: preflight, orient, interview, plan, approve, execute, review,
-close out. Two of them are where it stops and waits *by design* — the interview rounds and the
-single plan approval. It will also stop and ask when something needs a decision it should not
+close out. Three of them are where it stops and waits *by design* — the interview rounds, the
+single plan approval, and one question at the end: is this what you asked for. Every earlier gate
+checks something narrower (a task's own verify, the code's correctness, the counts), and a plan
+that misread the request passes all of them; the person who asked is the only one who can answer
+that, so it is asked rather than inferred. It will also stop and ask when something needs a decision it should not
 make for you: whether to branch off `main`, what to do about a failed task, how to pick up a
 plan whose tree is dirty. Everywhere else it runs without checking in.
 
@@ -275,6 +278,13 @@ contradicts a box here is the stale one.**
       the count the way it reports phase 5's. The scheduler test covers it (23 assertions) but no
       real plan has been built through it yet, so this box stays open until one has and the
       `orient:` line on disk says a number.
+- [ ] **The acceptance question has never been asked.** Added 2026-09-16 as phase 7 step 1: before
+      a plan is marked `done`, the `## Goal` is put beside what was built and the user is asked
+      whether it is what they wanted — a "no" blocks the plan with their words as the reason rather
+      than starting a fix. It exists because no earlier gate compares the outcome to the request:
+      `Goal` appeared in the command exactly twice, as a template heading and as text handed to
+      executors, and nothing read it back. Unrun. Ticks when a plan on disk carries a Log line
+      recording an answer, and the honest test is a run where the answer was *not* yes.
 - [x] The script version ran its interview, plan, execute and review phases on this repository on
       2026-09-12, under plan `ready-for-public`. **The split, which is the number that decides
       whether it fixed the prose version's defect: of the 4 tasks that have executed, 3 went to the script

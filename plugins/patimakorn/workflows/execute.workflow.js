@@ -1,7 +1,7 @@
 export const meta = {
   name: 'anvil-execute',
   description: 'Run an approved plan: one executor subagent per task, each started the moment its own blockers land, each returning a schema-validated result.',
-  whenToUse: 'Phase 5 of /patimakorn:anvil2. Not useful on its own — it needs a plan the interview already settled.',
+  whenToUse: 'Phase 5 of /patimakorn:anvil. Not useful on its own — it needs a plan the interview already settled.',
   phases: [
     { title: 'Execute', detail: 'one executor per task, dependency-ordered' },
   ],

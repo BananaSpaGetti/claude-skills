@@ -23,10 +23,16 @@ plugins/<name>/                   one directory per plugin
 ```
 
 Five plugins are listed in the marketplace manifest: `patimakorn`, `engineering-kit`,
-`caveman`, `council`, `game-save-re`. `patimakorn` holds two commands, `anvil` and `anvil2`, so
-they are addressed as `/patimakorn:anvil` and `/patimakorn:anvil2`; the plugin was itself called
-`anvil` until 2026-08-30 and older commits use that name throughout. Each has an entry in
-`.claude-plugin/marketplace.json` with `source: "./plugins/<name>"`.
+`caveman`, `council`, `game-save-re`. `patimakorn` holds one command, `anvil`, addressed as
+`/patimakorn:anvil`; the plugin was itself called `anvil` until 2026-08-30 and older commits use
+that name throughout. Each has an entry in `.claude-plugin/marketplace.json` with
+`source: "./plugins/<name>"`.
+
+Between 2026-09-08 and 2026-09-16 there were **two** commands: `anvil`, whose phase 5 dispatched
+by instruction, and `anvil2`, whose phase 5 dispatched through the workflow script. That was an
+experiment with a measured result — the prose version delegated once in twenty-two chances, the
+script version 43 times out of 43 — so the two were folded into one and the prose version deleted.
+Commits before 2026-09-16 mention `anvil2`; it is this file's `anvil`.
 
 **The repository is private as of 2026-09-03.** The remote is
 `github.com/BananaSpaGetti/claude-skills` and `/plugin marketplace add BananaSpaGetti/claude-skills`
@@ -63,7 +69,7 @@ manifest in isolation and prints a clean pass. Only `claude plugin validate .` c
 
 ## `plugins/patimakorn/workflows/` is executable, so it has a test
 
-`execute.workflow.js` is phase 5 of `/patimakorn:anvil2`: the script that dispatches one executor
+`execute.workflow.js` is phase 5 of `/patimakorn:anvil`: the script that dispatches one executor
 subagent per task. It exists because the same instruction written as prose in `anvil.md` was
 followed once in twenty-two chances. Treat it as code, not documentation.
 
@@ -139,7 +145,7 @@ Ordered procedure. Each step depends on the one before it.
    The script rejects an empty `tasks` array by design, so the **pass condition is the error it
    returns**: `anvil-execute: args.tasks is empty` means the file was found and the script ran.
    A failed `Read` fails this step; so does any error naming a path. Do not use a whole
-   `/patimakorn:anvil2` run for this — it would gate going public on inventing and approving a
+   `/patimakorn:anvil` run for this — it would gate going public on inventing and approving a
    throwaway plan, and any stumble in phases 1-4 would be indistinguishable from a real failure.
 
    **This step is about `Read`, not about `${CLAUDE_PLUGIN_ROOT}`.** The variable expands

@@ -27,8 +27,6 @@ A plugin command is addressed as `<plugin>:<command>`, so the command below is
 ```
 /patimakorn:anvil <what you want built>   start
 /patimakorn:anvil                        resume an in-progress plan
-
-/patimakorn:anvil2 <what you want built>  the same, with delegation made mandatory — see below
 ```
 
 Eight phases in one conversation: preflight, orient, interview, plan, approve, execute, review,
@@ -50,11 +48,11 @@ plan whose tree is dirty. Everywhere else it runs without checking in.
   durable reason — is written as an ADR instead, and vocabulary the interview had to pin down goes
   to a glossary. It uses whatever convention the repo already has; if there is none, the directory
   it would create is named at the approval step rather than appearing unannounced.
-- **Parallel waves.** One `executor` subagent per task, all dispatched together. Executors are
-  forbidden from running git commands — concurrent ones would race on `.git/index.lock` — so the
-  main loop commits each task sequentially instead. You keep `git revert <sha>` per task.
-  **This is what `anvil` instructs, not reliably what it does** — see Known gaps, and `anvil2`
-  below.
+- **One executor subagent per task, dispatched by a script.** Phase 5 hands the task list to
+  `plugins/patimakorn/workflows/execute.workflow.js`, and its `agent()` call is the only code path
+  that performs a task — see below for why that is a script and not an instruction. Executors are
+  forbidden from running git commands, since concurrent ones would race on `.git/index.lock`, so
+  the main loop commits each task sequentially instead. You keep `git revert <sha>` per task.
 - **Review loop, capped at 3 fixing rounds**, then one closing pass that reports rather than
   fixes — otherwise the last round's own fixes ship unreviewed. The loop stops early once a
   review comes back clean, and at the cap it says plainly what is still unresolved rather than
@@ -66,19 +64,26 @@ plan whose tree is dirty. Everywhere else it runs without checking in.
 Some work is deliberately *not* delegated: anything the plan marks `risk: destructive`,
 `risk: binary-format`, or `risk: judgement-call` stays in the main conversation.
 
-#### `anvil2` — the same eight phases, with phase 5 moved into code
+#### Why phase 5 is a script
 
-`anvil` treats delegation as advice, and a four-day run measured what that costs. Across three
-plans and 23 tasks — 22 of them `risk: none`, so all 22 were eligible — it dispatched one
-executor. The other 313 tool calls ran in the main conversation, where each one both adds a turn
-and leaves its result in context for every later turn. Context climbed from 72k to 556k tokens.
-Phase 1's "dispatch subagents for anything broad" ran zero times.
+There used to be two commands. `anvil` treated delegation as advice; `anvil2` moved phase 5's
+dispatch into code. They were run side by side, and on 2026-09-16 the prose version was deleted
+and the script version took the name.
+
+The advice version's four-day run measured what advice costs. Across three plans and 23 tasks —
+22 of them `risk: none`, so all 22 were eligible — it dispatched one executor. The other 313 tool
+calls ran in the main conversation, where each one both adds a turn and leaves its result in
+context for every later turn. Context climbed from 72k to 556k tokens. Phase 1's "dispatch
+subagents for anything broad" ran zero times. The script version, on a 23-task port of a Python
+tool to C, dispatched 43 executors across six workflow runs and kept exactly one task in the main
+conversation — the one the plan marked `risk: judgement-call`.
 
 The lesson was not that the instruction was badly worded. It was that an instruction is the wrong
 mechanism: a rule the orchestrator can forget under pressure will be forgotten under pressure. So
-in `anvil2`, **phase 5's dispatch is a script** — `plugins/patimakorn/workflows/execute.workflow.js`
-— and the only code path that performs a task is its `agent()` call. There is no branch where the
-conversation does the work instead.
+**phase 5's dispatch is a script** — `plugins/patimakorn/workflows/execute.workflow.js` — and the
+only code path that performs a task is its `agent()` call. There is no branch where the
+conversation does the work instead. Keeping the forgetful version around as an option would have
+contradicted the claim the script exists to make.
 
 What moving it into code buys, beyond enforcement:
 
@@ -111,8 +116,8 @@ over ordering, concurrency, stranded dependents, cycles and the risk-marker guar
 `node plugins/patimakorn/workflows/execute.workflow.test.js`; it stubs the agent, so it costs
 nothing and needs no network.
 
-Both commands ship, so the change can be compared against the original. What has and has not been
-proven about either is tracked in Known gaps — start there.
+One command ships. What has and has not been proven about it is tracked in Known gaps — start
+there.
 
 ### `engineering-kit` — nine disciplines the agent reaches for on its own
 
@@ -245,14 +250,21 @@ contradicts a box here is the stale one.**
       2026-09-02, three plans and 23 tasks end to end. All eight phases ran, the plan file drove a
       commit per task across 24 `plan(<slug>)` commits, resume worked across a three-day gap, and
       the review loop returned fifteen confirmed findings per round on real numerical code.
-- [ ] **`anvil` does not reliably delegate, and that is the open defect.** In the run above it
-      dispatched one executor for 22 eligible tasks and ran phase 1's exploration zero times,
-      doing 313 tool calls in the main conversation instead; context reached 556k tokens. The
-      command's text says to delegate, so this is a case of instructions that do not bind rather
-      than a missing feature. `anvil2` is the attempt to make them bind.
-- [x] `anvil2` ran its interview, plan, execute and review phases on this repository on
+- [x] **Phase 5 delegation binds now, and the prose version that did not is deleted.** The run
+      above dispatched one executor for 22 eligible tasks, ran phase 1's exploration zero times,
+      and did 313 tool calls in the main conversation; context reached 556k tokens. That was an
+      instruction that did not bind, not a missing feature. Moving the dispatch into
+      `execute.workflow.js` fixed it: measured across the 2026-09-13 C-port run, 43 of 43 eligible
+      tasks went to the script and the one main-loop task was the one marked `risk: judgement-call`.
+      On 2026-09-16 the two commands were folded into one and the prose version removed.
+- [ ] **Phase 1's dispatch floor still does not bind, and that is the remaining half.** The same
+      43-executor run dispatched **zero** `Explore` agents, though phase 1 says "the floor is one
+      dispatch". Phase 5 got a script; phase 1 is still prose, and prose was measured not binding.
+      The obvious shapes — requiring the count to be stated before phase 2 opens, or moving
+      orientation into a script of its own — have not been tried.
+- [x] The script version ran its interview, plan, execute and review phases on this repository on
       2026-09-12, under plan `ready-for-public`. **The split, which is the number that decides
-      whether it fixed `anvil`'s defect: of the 4 tasks that have executed, 3 went to the script
+      whether it fixed the prose version's defect: of the 4 tasks that have executed, 3 went to the script
       and 1 stayed in the main loop.** The plan's fifth task — merge and push — had not run when
       this was written. Both main-loop tasks are `risk: judgement-call` and exempt by phase 5
       step 1: the one that has run mutates GitHub repo metadata; the one still pending is a git
@@ -270,9 +282,9 @@ contradicts a box here is the stale one.**
       `Workflow` is — it takes a path only inside the working directory or an `--add-dir`
       directory, and refuses anything else with `scriptPath must be a script path this tool
       returned, or a file you can already read`. Reading the file first does not lift it. So a
-      stranger's first `/patimakorn:anvil2` would have failed at phase 5, every time, and
+      stranger's first `/patimakorn:anvil` would have failed at phase 5, every time, and
       `council` with it. Both now `Read` the bundled script and pass its contents as `script`,
-      measured working the same day. The 2026-09-13 `anvil2` run reached phase 5 only by copying
+      measured working the same day. The 2026-09-13 run reached phase 5 only by copying
       the script into the repository under test; the fixed commands forbid that by name, because
       it leaves an untracked file in someone else's repo.
 - [ ] **Resume is not yet safe against an interrupted phase 6, in either command.** Three review
@@ -291,7 +303,7 @@ contradicts a box here is the stale one.**
   mechanism the commands actually use (`Read`, then `script`), with the same pass condition —
   the script's own `anvil-execute: args.tasks is empty`.
 - [ ] `council.workflow.js` has been run once, from the author's user-scope copy. Its published
-      copy has still never been run — the delivery mechanism is now the same one `anvil2` was
+      copy has still never been run — the delivery mechanism is now the same one `anvil` was
       measured on, but that is an argument by analogy, not a run.
 - [ ] The eval suite has never been executed — `claude plugin eval` is in early access and prints
       a notice instead of running.

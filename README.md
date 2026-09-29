@@ -107,12 +107,21 @@ loop parses it and passes the tasks as `args`), running each `verify:` for real,
 concurrent agents would race `.git/index.lock`, which is also why executors are forbidden every
 git write command.
 
-Every other dispatch still names its model from a table rather than inheriting the session's:
-retrieval and summarization go to `sonnet`; research whose answer turns on source quality, and the
-phase 6 review finders, keep the session model deliberately — those finders returned fifteen
-confirmed findings per round for under 8% of that run's cost. The phase 5 executors need no
-override at all: `patimakorn:executor` pins `model: sonnet` in its own frontmatter, and a
-workflow-dispatched agent honours it.
+Phase 2's outside-the-repository research got the same treatment on 2026-09-29, after a run
+showed what the prose cost: five web sweeps dispatched as `general-purpose` with the model
+omitted — so inherited opus — ran 130 to 193 turns each and were 83% of the run's ~$47 in
+API-equivalent tokens, 58% of that re-reading pages already fetched. So research is
+`plugins/patimakorn/workflows/research.workflow.js`: one `general-purpose` agent per question at
+`sonnet` and `effort: medium`, a fetch budget in every prompt (default 25), every finding carrying
+the URL it was read from, and the return counting `fetchesUsed`, `unsourced` findings and
+`overBudget` agents so phase 7 prints them. The old Rule 1 row said *omit* on the theory that
+weighing sources needs the strongest model; weighing them is the interview's job, from the
+citations.
+
+The only dispatch that still keeps the session model on purpose is the phase 6 review finders —
+those returned fifteen confirmed findings per round for under 8% of a run's cost. The phase 5
+executors need no override at all: `patimakorn:executor` pins `model: sonnet` in its own
+frontmatter, and a workflow-dispatched agent honours it.
 
 Phase 1 got the same treatment on 2026-09-16, for the same reason: the same 43-executor run
 dispatched zero `Explore` agents against an instruction that said "the floor is one dispatch". So
@@ -124,9 +133,11 @@ shape of a guess — and phase 7 reports that number beside `dispatched`, so a p
 uncited claim shows it in the close-out rather than in the result. Unlike the
 execute script, this one has not yet been run on a real plan; Known gaps says so.
 
-Both scripts have tests — `execute.workflow.test.js` (22 assertions over ordering, concurrency,
-stranded dependents, cycles and the risk-marker guard) and `orient.workflow.test.js` (23 over the
-dispatch shape, the empty-list refusal, dead-agent accounting and the file union). Each stubs the
+All three scripts have tests — `execute.workflow.test.js` (22 assertions over ordering,
+concurrency, stranded dependents, cycles and the risk-marker guard), `orient.workflow.test.js`
+(31 over the dispatch shape, the empty-list refusal, dead-agent accounting, the file union and
+unsourced answers) and `research.workflow.test.js` (22 over the model/effort pin, the budget in
+the prompt and its overrides, unsourced findings and over-budget reporting). Each stubs the
 agent, so they cost nothing and need no network:
 `node plugins/patimakorn/workflows/<name>.workflow.test.js`.
 
@@ -303,6 +314,13 @@ contradicts a box here is the stale one.**
       nobody commits separately. Closing the first half needs a plan with at least one `risk: none`
       task. The second is a real gap in the rule, not in the run: phase 5 step 1's exemptions say
       what stays in the conversation and nothing says how those tasks reach git.
+- [ ] **The research script has never been run, and its fetch budget is self-reported.** Added
+      2026-09-29 after the sweep measurement above. The script pins `sonnet` and `effort: medium`
+      in code, which no run can drift from; the budget lives in the prompt and the agent reports
+      `fetches_used` itself, so an overrun is caught by the number being wrong or the `overBudget`
+      list being non-empty, not by the runtime stopping it. Ticks when a plan on disk records
+      research counts in its phase 7 report and the agent transcripts show fetch counts at or under
+      the budget — the transcript count is the check on the self-report.
 - [x] The script version ran its interview, plan, execute and review phases on this repository on
       2026-09-12, under plan `ready-for-public`. **The split, which is the number that decides
       whether it fixed the prose version's defect: of the 4 tasks that have executed, 3 went to the script

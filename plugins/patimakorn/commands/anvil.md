@@ -54,7 +54,7 @@ accident* never is. So decide, every time, from this table:
 | Phase 1 orient — locate files, trace how a flow is wired, find callers | `Explore`, via `orient.workflow.js` | `sonnet`, set by the script | Retrieval. The judgement is in reading the result, not producing it. The script passes `model: sonnet` itself, so this row is what it does rather than what you must remember. |
 | Phase 2 — read a file, a config, or the git history to settle one fact | `Explore` | `sonnet` | Retrieval. |
 | Phase 2 — summarize sources already identified | `general-purpose` | `sonnet` | Summarization of text someone else chose. |
-| Phase 2 — research where source quality is the question: contradictory figures, primary vs secondary, whether a standard still applies | `general-purpose` | *omit* | The plan is built on the answer. Weighing sources is the capability being paid for. |
+| Phase 2 — research outside the repository: a spec, a vendor's number, a market figure, whether a standard still applies | `general-purpose`, via `research.workflow.js` | `sonnet`, set by the script | Retrieval with citations. The script pins the model, sets `effort: medium`, and gives each question a fetch budget. This row used to say *omit* on the theory that weighing sources needs the strongest model; measured on 2026-09-29, five such sweeps inherited opus, ran 130–193 turns each, and were 83% of the run's cost — 58% of it re-reading pages already fetched. Weighing the sources is the interview's job, from the citations the script returns. |
 | Phase 5 — execute one task | `patimakorn:executor` | *omit* | The agent's own frontmatter pins `model: sonnet`; passing `model` here would override it. |
 | Phase 6 — review finders | whatever the `code-review` skill dispatches | *omit* | Cross-file, domain-specific defect hunting. |
 
@@ -225,12 +225,35 @@ question still open in this round belongs to a *later* round, not this one.
 
 Rules:
 
-- **Facts are never the user's job.** When a frontier question needs a fact from the filesystem,
-  the web, or the git history, dispatch a subagent to find it — at the model Rule 1's table gives
-  that kind of question, which is `sonnet` for a lookup and inherited for research whose answer
-  turns on source quality. If the fact needs primary sources rather than a quick look — an API
-  contract, a library's actual behaviour, a spec — use the `research` skill, which runs in the
-  background. Never block the round on an exploration — a running one is just an unsettled
+- **Facts are never the user's job, and neither are they yours to fetch.** A frontier question
+  that needs a fact goes to a script, by where the fact lives:
+  - **in the repository or the git history** → a second orient run
+    (`${CLAUDE_PLUGIN_ROOT}/workflows/orient.workflow.js`, phase 1's mechanism — `Read` it, pass
+    it as `script`).
+  - **outside it** — a spec, a vendor's figure, a market number, a library's documented
+    behaviour → `${CLAUDE_PLUGIN_ROOT}/workflows/research.workflow.js`, the same way:
+
+    ```
+    Workflow({
+      script: "<the contents of research.workflow.js, verbatim>",
+      args: {
+        request:    "<the requested work, verbatim>",
+        questions:  ["<one question per fact>", { q: "<a bigger one>", maxFetches: 40 }],
+        maxFetches: 25,                              // default per question; omit for 25
+        hints:      ["https://..."]                  // omit if none
+      }
+    })
+    ```
+
+    It dispatches one `general-purpose` agent per question at `sonnet`, `effort: medium`, with the
+    fetch budget in the prompt, and returns `findings` each carrying the URL it was read from,
+    `unknowns`, `fetchesUsed`, `unsourced` (findings with no URL) and `overBudget` (agents that
+    reported using more than their ceiling). **A finding with no URL is not a fact** — it goes to
+    the user as a question, not into the plan as context. Both counts reach phase 7.
+
+  Neither script is optional for a fact it can reach. Dispatching a `general-purpose` agent
+  yourself with the model omitted is how five research sweeps inherited opus and ran 130–193
+  turns each on 2026-09-29. Never block the round on a running script — it is just an unsettled
   prerequisite, so only the questions downstream of it wait.
 - **Decisions are always the user's.** Put each one to them and wait.
 - **Challenge the decisions that arrived already made.** The request carries decisions the user
@@ -588,6 +611,11 @@ before) writes `status: blocked` with `reason: acceptance not asked`, never `don
     script refuses an empty list. The honest alternatives are a number, or `skipped, already
     mapped` with the reason. A report that cannot produce either is a run that read the repository
     into the main conversation instead, and this line is where that becomes visible.
+  - **the same for phase 2 research**, from the research script's return: questions dispatched,
+    `fetchesUsed` in total, `unsourced` findings, and every entry in `overBudget` with its
+    numbers. A research question answered by an agent you dispatched yourself, outside the
+    script, is reported here by name with the model it ran on — that is the path that cost 83% of
+    a run, and the report is where it stops being invisible.
   - tasks done / total, and **how many went to the script versus stayed in this conversation** —
     the script's return value carries `dispatched`, so this is a count, not an impression. Name
     each main-loop task and which line of phase 5 step 1 exempted it. A run where that list is

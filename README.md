@@ -268,23 +268,38 @@ contradicts a box here is the stale one.**
       `execute.workflow.js` fixed it: measured across the 2026-09-13 C-port run, 43 of 43 eligible
       tasks went to the script and the one main-loop task was the one marked `risk: judgement-call`.
       On 2026-09-16 the two commands were folded into one and the prose version removed.
-- [ ] **Phase 1 now has a script, and it has never been run.** The 43-executor run dispatched
-      **zero** `Explore` agents, though phase 1 said "the floor is one dispatch" — the same
-      instruction-does-not-bind defect phase 5 had, on the other side of the interview. On
-      2026-09-16 orientation moved into `plugins/patimakorn/workflows/orient.workflow.js`: the main
-      loop composes the questions, the script dispatches one `Explore` agent per question at
-      `sonnet` and refuses an empty list, and its `files` is the only thing the plan's `## Context`
-      may be written from. The plan frontmatter records the run as `orient:` and phase 7 reports
-      the count the way it reports phase 5's. The scheduler test covers it (23 assertions) but no
-      real plan has been built through it yet, so this box stays open until one has and the
-      `orient:` line on disk says a number.
-- [ ] **The acceptance question has never been asked.** Added 2026-09-16 as phase 7 step 1: before
-      a plan is marked `done`, the `## Goal` is put beside what was built and the user is asked
-      whether it is what they wanted — a "no" blocks the plan with their words as the reason rather
-      than starting a fix. It exists because no earlier gate compares the outcome to the request:
-      `Goal` appeared in the command exactly twice, as a template heading and as text handed to
-      executors, and nothing read it back. Unrun. Ticks when a plan on disk carries a Log line
-      recording an answer, and the honest test is a run where the answer was *not* yes.
+- [x] **Phase 1 is a script, and it has run.** The 43-executor run had dispatched **zero**
+      `Explore` agents against "the floor is one dispatch" — the same instruction-does-not-bind
+      defect phase 5 had, on the other side of the interview. On 2026-09-16 orientation moved into
+      `plugins/patimakorn/workflows/orient.workflow.js`: the main loop composes the questions, the
+      script dispatches one `Explore` agent per question at `sonnet` and refuses an empty list, and
+      its `files` is the only thing the plan's `## Context` may be written from. The first real plan
+      through it, `idea-readiness-review` in a separate repository on the same day, carries
+      `orient: wf_c27f7b3d-fbb, 6 dispatched` in its frontmatter and "all 6 answered" in its Log.
+      That is the number this box was waiting for. It also settles the delivery mechanism for a
+      script the `Workflow` tool cannot reach by path — `Read` then `script` — on a real run, not a
+      probe; the execute script uses the same mechanism and has not yet had a real run through it
+      (see the phase 5 box below).
+- [ ] **The acceptance question has been asked once, and answered yes.** Added 2026-09-16 as
+      phase 7 step 1: before a plan is marked `done`, the `## Goal` is put beside what was built
+      and the user is asked whether it is what they wanted — a "no" blocks the plan with their
+      words as the reason rather than starting a fix. It exists because no earlier gate compares
+      the outcome to the request: `Goal` appeared in the command exactly twice, as a template
+      heading and as text handed to executors, and nothing read it back. `idea-readiness-review`
+      asked it on 2026-09-17 and the Log records "accepted, the deliverable is what he asked for",
+      so the step runs and the answer is written down. Half a tick: a yes proves the question is
+      asked, not that a no would be handled as written. The box closes on the first run where the
+      answer was not yes and the plan went to `blocked` with the user's words instead of to a fix.
+- [ ] **The execute script has not run a real plan through `Read` + `script`, and "a commit per
+      task" does not bind for main-loop tasks.** Two things the same run exposed. `idea-readiness-review`
+      dispatched 0 executors — legitimately, since all seven tasks were `risk: judgement-call` and
+      the plan was a judgement — so phase 5's new delivery mechanism has been exercised only by the
+      orient script (same mechanism, different script). And those seven main-loop tasks landed as
+      one commit, not seven; the Log says so itself. The per-task commit rule is enforced by the
+      main loop committing after each script result, so a task the main loop performs is a task
+      nobody commits separately. Closing the first half needs a plan with at least one `risk: none`
+      task. The second is a real gap in the rule, not in the run: phase 5 step 1's exemptions say
+      what stays in the conversation and nothing says how those tasks reach git.
 - [x] The script version ran its interview, plan, execute and review phases on this repository on
       2026-09-12, under plan `ready-for-public`. **The split, which is the number that decides
       whether it fixed the prose version's defect: of the 4 tasks that have executed, 3 went to the script
@@ -310,16 +325,17 @@ contradicts a box here is the stale one.**
       measured working the same day. The 2026-09-13 run reached phase 5 only by copying
       the script into the repository under test; the fixed commands forbid that by name, because
       it leaves an untracked file in someone else's repo.
-- [ ] **Resume is not yet safe against an interrupted phase 6, in either command.** Three review
-  rounds narrowed this and none closed it. `status: executing` is now stamped by phase 5 but never
-  committed, so Resume's own `git checkout -- .` erases it; `anvil.md` got the status routing but
-  not the dirty-tree-during-review case, the `blocked` selection bullet, or the stamp; neither
-  command records which one wrote a plan, so either can pick up the other's and re-dispatch work
-  that already landed; and `planning` is in no in-progress set, so a plan interrupted during
-  phase 3 is reported as nothing to resume. The shape of the real fix is a plan-schema change —
-  a provenance field, a `blocked-by: review` sentinel so a task can state that constraint once
-  instead of every code path re-deriving it, and a persisted `resumeFromRunId` so a resumed
-  phase 5 replays from cache rather than re-running every dispatch live.
+- [ ] **Resume is not yet safe against an interrupted phase 6.** Three review rounds narrowed this
+  and none closed it; the 2026-09-16 changes closed the edges and left the centre. Closed: the
+  two-command confusion is gone with the fold; `planning` has a Resume branch (routed by whether
+  `orient:` is filled); an unrecognised `status:` stops and asks instead of reading as finished —
+  three plans had been sitting at `complete`, a word in no schema, and read as done only by luck;
+  and `approved`/`executing` with every task `done` routes to phase 6 instead of back into phase
+  5. Still open: `status: executing` is stamped by phase 5 but never committed, so Resume's own
+  `git checkout -- .` erases it, and a resumed phase 5 re-runs every dispatch live because no run
+  id is persisted. The shape of the real fix is unchanged — a `blocked-by: review` sentinel so a
+  task can state that constraint once instead of every code path re-deriving it, and a persisted
+  `resumeFromRunId` so a resume replays from cache.
 - [x] **The old probe did not test what phase 5 does — and the worry was backwards.** It read as a
   risk of a *false negative* gating the repo shut. The measurement went the other way: the
   variable resolves, and the call it feeds is what fails. CLAUDE.md's step 3 now probes the

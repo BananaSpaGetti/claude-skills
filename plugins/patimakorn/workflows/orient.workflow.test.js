@@ -23,14 +23,17 @@ function check(name, cond, extra) {
 const parallel = async (thunks) => Promise.all(thunks.map(t => t().catch(() => null)));
 
 // stub agent: records what it was asked, resolves after a tick; nullIdx returns nothing
-function stubAgent(trace, { nullIdx = new Set(), filesFor = () => [] } = {}) {
+function stubAgent(trace, { nullIdx = new Set(), filesFor = () => [], unknownsFor = () => undefined, summaryFor = (i) => 'answer ' + i } = {}) {
   return async (prompt, opts) => {
     const idx = Number((opts.label.match(/orient (\d+)/) || [])[1]);
     trace.push({ ev: 'start', idx, opts, prompt });
     await new Promise(r => setImmediate(r));
     trace.push({ ev: 'end', idx });
     if (nullIdx.has(idx)) return null;
-    return { files: filesFor(idx), summary: 'answer ' + idx };
+    const r = { files: filesFor(idx), summary: summaryFor(idx) };
+    const u = unknownsFor(idx);
+    if (u !== undefined) r.unknowns = u;
+    return r;
   };
 }
 
@@ -111,6 +114,29 @@ async function expectThrow(args) {
     check('question echoed', out.answers[0].question === 'q1');
     check('summary present', out.answers[0].summary === 'answer 1');
     check('orientIsDone flag', out.orientIsDone === true);
+  }
+
+  console.log('--- 8. a summary with no file and no unknown is counted as unsourced');
+  {
+    // q1: files, no unknowns -> sourced.  q2: no files, unknowns -> honest gap, not unsourced.
+    // q3: no files, no unknowns, summary -> unsourced.  q4: no files, no unknowns, blank -> not.
+    const filesFor = (i) => i === 1 ? [{ path: 'a.c', why: 'a' }] : [];
+    const unknownsFor = (i) => i === 2 ? ['could not tell'] : undefined;
+    const summaryFor = (i) => i === 4 ? '   ' : 'answer ' + i;
+    const { out } = await run({ request: 'r', questions: ['q1', 'q2', 'q3', 'q4'] }, { filesFor, unknownsFor, summaryFor });
+    check('unsourced is an array', Array.isArray(out.unsourced));
+    check('exactly one unsourced', out.unsourced.length === 1, JSON.stringify(out.unsourced));
+    check('it is q3', out.unsourced[0] === 'q3', out.unsourced[0]);
+    check('sourced answer not flagged', !out.unsourced.includes('q1'));
+    check('admitted-unknown answer not flagged', !out.unsourced.includes('q2'));
+    check('blank summary not flagged', !out.unsourced.includes('q4'));
+    check('all four still counted as answered', out.answered === 4, String(out.answered));
+  }
+
+  console.log('--- 9. no unsourced answers gives an empty array, never undefined');
+  {
+    const { out } = await run({ request: 'r', questions: ['a'] }, { filesFor: () => [{ path: 'x', why: 'y' }] });
+    check('empty array', Array.isArray(out.unsourced) && out.unsourced.length === 0);
   }
 
   console.log('\n' + PASS + ' passed, ' + FAIL + ' failed');

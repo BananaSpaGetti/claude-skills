@@ -117,7 +117,16 @@ for (const a of settled) {
   for (const f of a.answer.files || []) if (f && f.path && !files.has(f.path)) files.set(f.path, f.why)
 }
 
-log(settled.length + ' answered, ' + failed + ' returned nothing, ' + files.size + ' distinct file(s) named')
+// An answer that names no file and admits no unknown, yet has a summary, is a claim with
+// no source -- the exact shape of a hallucination. The schema cannot forbid it (an empty
+// array is valid), so it is counted here and reported beside `dispatched`. The main loop
+// must not paste an unsourced summary into the plan as if it were a fact.
+const unsourced = settled
+  .filter(a => !(a.answer.files || []).length && !(a.answer.unknowns || []).length && String(a.answer.summary || '').trim())
+  .map(a => a.question)
+
+log(settled.length + ' answered, ' + failed + ' returned nothing, ' + files.size + ' distinct file(s) named'
+  + (unsourced.length ? ', ' + unsourced.length + ' UNSOURCED (summary with no file and no unknown)' : ''))
 
 return {
   dispatched: QUESTIONS.length,
@@ -126,6 +135,9 @@ return {
   // The union of every file any answer named, one line each -- the shape the plan's
   // Context section wants. Paste it; do not retype it from memory.
   files: [...files.entries()].map(([path, why]) => ({ path, why })),
-  // Phase 7 reports this number. It comes from here, not from an impression.
+  // Questions whose answer cites nothing and admits nothing. Treat each as unanswered:
+  // re-ask it with the instruction to name a file or say unknown, or put it to the user.
+  unsourced,
+  // Phase 7 reports these numbers. They come from here, not from an impression.
   orientIsDone: true,
 }

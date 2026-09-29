@@ -157,6 +157,14 @@ plan's `## Context` section wants, and the only thing that may go there (phase 3
 is the number phase 7 reports. `unknowns` are prerequisites for the interview: a question the
 repository could not settle is one the user has to.
 
+**`unsourced` is the list of questions whose answer cited no file and admitted no unknown, yet
+has a summary.** That is the shape of a guess — a confident sentence with nothing behind it — and
+the script counts it because the schema cannot forbid an empty array. **Treat each as unanswered.**
+Do not paste its summary into the plan. Either re-ask it in a second orient run with the question
+rephrased to demand a path or an explicit unknown, or put it to the user in phase 2 as a fact the
+repository would not give up. Phase 7 reports the count beside `dispatched`; a run whose report
+says `2 unsourced` and whose plan quotes both summaries as facts did not follow this rule.
+
 Do not run the script on a repository you have already mapped in this conversation — say so, and
 move on, and phase 7 reports `orient: skipped, already mapped` rather than a count. That is the
 only exemption, and it is not "the repo looked small".
@@ -572,8 +580,11 @@ before) writes `status: blocked` with `reason: acceptance not asked`, never `don
   - **the acceptance answer from step 1, in the user's words** — `accepted`, or what they said was
     missing. This line is the only place in the whole run where the outcome is compared to the
     request, so it goes first.
-  - **how many orientation questions phase 1 dispatched** — the orient script's return value
-    carries `dispatched`, so this is a count, not an impression. `0` is not a possible value: the
+  - **how many orientation questions phase 1 dispatched, and how many came back unsourced** —
+    the orient script's return value carries `dispatched` and `unsourced`, so both are counts, not
+    impressions. An unsourced answer is one that cited no file and admitted no unknown; say what
+    was done with each (re-asked, put to the user, or dropped) — a plan that quotes one as a fact
+    is a plan built on a guess. `0` dispatched is not a possible value: the
     script refuses an empty list. The honest alternatives are a number, or `skipped, already
     mapped` with the reason. A report that cannot produce either is a run that read the repository
     into the main conversation instead, and this line is where that becomes visible.

@@ -118,7 +118,10 @@ Phase 1 got the same treatment on 2026-09-16, for the same reason: the same 43-e
 dispatched zero `Explore` agents against an instruction that said "the floor is one dispatch". So
 orientation is `plugins/patimakorn/workflows/orient.workflow.js` — the main loop composes the
 questions, the script dispatches one read-only `Explore` agent per question and refuses an empty
-list, and its `files` is the only thing the plan's `## Context` may be written from. Unlike the
+list, and its `files` is the only thing the plan's `## Context` may be written from. It also
+counts `unsourced` answers — a summary that cites no file and admits no unknown, which is the
+shape of a guess — and phase 7 reports that number beside `dispatched`, so a plan built on an
+uncited claim shows it in the close-out rather than in the result. Unlike the
 execute script, this one has not yet been run on a real plan; Known gaps says so.
 
 Both scripts have tests — `execute.workflow.test.js` (22 assertions over ordering, concurrency,

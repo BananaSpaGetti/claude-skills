@@ -21,15 +21,24 @@ function check(name, cond, extra) {
 
 const parallel = async (thunks) => Promise.all(thunks.map(t => t().catch(() => null)));
 
-// stub agent: records what it was asked; per-index answer shaping
-function stubAgent(trace, { nullIdx = new Set(), answerFor = () => ({ findings: [{ claim: 'c', source_url: 'https://x' }], fetches_used: 3 }) } = {}) {
+// Stub agent: routes by label prefix. `searchFor(i)` answers searcher i (1-based);
+// `readFor(url)` answers the reader for that URL. Either may return null.
+function stubAgent(trace, { searchFor, readFor } = {}) {
+  const defSearch = (i) => ({ urls: [{ url: 'https://s' + i + '.example/a', why: 'w' }], searches_used: 2 });
+  const defRead = (url) => ({ relevant: true, findings: [{ claim: 'c from ' + url, quote: 'q' }] });
   return async (prompt, opts) => {
-    const idx = Number((opts.label.match(/research (\d+)/) || [])[1]);
-    trace.push({ ev: 'start', idx, opts, prompt });
+    const ms = opts.label.match(/^search (\d+)/); const mr = opts.label.match(/^read (\d+)\/(\d+): (.+)$/);
+    const kind = ms ? 'search' : 'read';
+    const rec = { ev: 'start', kind, opts, prompt };
+    if (ms) rec.i = Number(ms[1]);
+    trace.push(rec);
     await new Promise(r => setImmediate(r));
-    trace.push({ ev: 'end', idx });
-    if (nullIdx.has(idx)) return null;
-    return answerFor(idx);
+    trace.push({ ev: 'end', kind });
+    if (ms) return (searchFor || defSearch)(rec.i);
+    // recover the full URL from the prompt (the label is truncated)
+    const url = (prompt.match(/## The page\n(\S+)/) || [])[1];
+    rec.url = url;
+    return (readFor || defRead)(url);
   };
 }
 
@@ -43,37 +52,127 @@ async function expectThrow(args) {
   try { await run(args); return null; }
   catch (e) { return e.message; }
 }
+const starts = (trace, kind) => trace.filter(t => t.ev === 'start' && t.kind === kind);
 
 (async () => {
-  console.log('--- 1. every dispatch is general-purpose at sonnet, medium effort, with the schema');
+  console.log('--- 1. two stages: one searcher per question, then one reader per URL');
   {
     const { out, trace } = await run({ request: 'r', questions: ['a', 'b'] });
-    const o = trace[0].opts;
-    check('agentType general-purpose', o.agentType === 'general-purpose', o.agentType);
-    check('model sonnet (never inherited)', o.model === 'sonnet', o.model);
-    check('effort medium', o.effort === 'medium', o.effort);
-    check('schema present', o.schema && o.schema.type === 'object');
-    check('2 dispatched, concurrently', out.dispatched === 2 && trace.findIndex(t => t.ev === 'end') === 2);
+    check('2 searchers', starts(trace, 'search').length === 2);
+    check('2 readers (one URL each)', starts(trace, 'read').length === 2);
+    check('all searches end before any read starts', trace.findIndex(t => t.ev === 'start' && t.kind === 'read') > trace.filter(t => t.ev === 'end' && t.kind === 'search').length + 1);
+    check('counts reported', out.dispatched === 2 && out.searched === 2 && out.urlsFound === 2 && out.pagesRead === 2);
+    check('findings carry source_url and questions', out.findings.length === 2 && out.findings.every(f => f.source_url && f.questions.length === 1));
   }
 
-  console.log('--- 2. the prompt carries the budget number, and the default is 25');
+  console.log('--- 2. searcher inherits the session model at low effort; reader is sonnet at low');
   {
     const { trace } = await run({ request: 'r', questions: ['a'] });
-    const p = trace[0].prompt;
-    check('default budget 25 in prompt', /at most 25 web searches and fetches/.test(p));
-    check('stop instruction present', /When you reach 25, stop/.test(p));
-    check('URL-per-claim rule stated', /carries the URL/.test(p));
+    const s = starts(trace, 'search')[0].opts, r = starts(trace, 'read')[0].opts;
+    check('searcher: no model key (inherits)', !('model' in s), JSON.stringify(s.model));
+    check('searcher effort low', s.effort === 'low', s.effort);
+    check('reader model sonnet', r.model === 'sonnet', r.model);
+    check('reader effort low', r.effort === 'low', r.effort);
+    check('both general-purpose with a schema', s.agentType === 'general-purpose' && r.agentType === 'general-purpose' && s.schema && r.schema);
   }
 
-  console.log('--- 3. budget is overridable per question and globally');
+  console.log('--- 3. models and effort are overridable per stage');
   {
-    const { trace, out } = await run({ request: 'r', maxFetches: 10, questions: ['a', { q: 'b', maxFetches: 40 }] });
-    check('global override reaches q1', /at most 10 web/.test(trace.find(t => t.idx === 1).prompt));
-    check('per-question override wins for q2', /at most 40 web/.test(trace.find(t => t.idx === 2).prompt));
-    check('budget echoed in answers', out.answers[0].budget === 10 && out.answers[1].budget === 40);
+    const { trace, out } = await run({ request: 'r', questions: ['a'], searchModel: 'sonnet', searchEffort: 'medium', readModel: 'haiku', readEffort: 'medium' });
+    const s = starts(trace, 'search')[0].opts, r = starts(trace, 'read')[0].opts;
+    check('search override', s.model === 'sonnet' && s.effort === 'medium');
+    check('read override', r.model === 'haiku' && r.effort === 'medium');
+    check('models echoed in return', out.models.search === 'sonnet' && out.models.read === 'haiku');
   }
 
-  console.log('--- 4. rejects an empty or blank question list');
+  console.log('--- 4. complexity tiers set the budgets in the prompt; default is comparison');
+  {
+    const { trace } = await run({ request: 'r', questions: [{ q: 'a', complexity: 'simple' }, 'b', { q: 'c', complexity: 'complex' }] });
+    const p = (i) => starts(trace, 'search').find(t => t.i === i).prompt;
+    check('simple: 4 searches / 4 urls', /at most 4 searches, returning at most 4 URLs/.test(p(1)));
+    check('default comparison: 10 / 10', /at most 10 searches, returning at most 10 URLs/.test(p(2)));
+    check('complex: 15 / 20', /at most 15 searches, returning at most 20 URLs/.test(p(3)));
+    check('start-wide-then-narrow instruction present', /Start wide, then narrow/.test(p(2)));
+    check('search-only rule present', /do not call WebFetch/.test(p(2)));
+  }
+
+  console.log('--- 5. explicit maxSearches / maxUrls override the tier');
+  {
+    const { trace } = await run({ request: 'r', questions: [{ q: 'a', complexity: 'simple', maxSearches: 9, maxUrls: 7 }] });
+    check('overrides win', /at most 9 searches, returning at most 7 URLs/.test(starts(trace, 'search')[0].prompt));
+  }
+
+  console.log('--- 6. a URL surfaced by two questions is read once, findings offered to both');
+  {
+    const searchFor = () => ({ urls: [{ url: 'https://shared.example/p', why: 'w' }], searches_used: 1 });
+    const { out, trace } = await run({ request: 'r', questions: ['a', 'b'] }, { searchFor });
+    check('one reader', starts(trace, 'read').length === 1, String(starts(trace, 'read').length));
+    check('urlsFound=1', out.urlsFound === 1);
+    check('page lists both questions', out.pages[0].questions.join(',') === '1,2', out.pages[0].questions.join(','));
+    check('finding offered to both', out.findings[0].questions.join(',') === '1,2');
+    check('reader prompt lists both questions', /1\. a\n\s+2\. b/.test(starts(trace, 'read')[0].prompt));
+  }
+
+  console.log('--- 7. a reader that tags for_question narrows the attribution');
+  {
+    const searchFor = () => ({ urls: [{ url: 'https://shared.example/p', why: 'w' }], searches_used: 1 });
+    const readFor = () => ({ relevant: true, findings: [{ claim: 'only b', quote: 'q', for_question: 2 }] });
+    const { out } = await run({ request: 'r', questions: ['a', 'b'] }, { searchFor, readFor });
+    check('attributed to question 2 only', out.findings[0].questions.join(',') === '2');
+  }
+
+  console.log('--- 8. the reader stage caps distinct pages at maxPages and says how many it dropped');
+  {
+    const searchFor = (i) => ({ urls: [1, 2, 3].map(k => ({ url: 'https://q' + i + '.example/' + k, why: 'w' })), searches_used: 1 });
+    const { out, trace } = await run({ request: 'r', questions: ['a', 'b'], maxPages: 4 }, { searchFor });
+    check('6 found', out.urlsFound === 6);
+    check('4 read', starts(trace, 'read').length === 4 && out.pagesRead === 4);
+    check('droppedForCap=2', out.droppedForCap === 2, String(out.droppedForCap));
+  }
+
+  console.log('--- 9. per-question URL budget truncates a searcher that returns too many');
+  {
+    const searchFor = () => ({ urls: Array.from({ length: 9 }, (_, k) => ({ url: 'https://x.example/' + k, why: 'w' })), searches_used: 1 });
+    const { out } = await run({ request: 'r', questions: [{ q: 'a', complexity: 'simple' }] }, { searchFor });
+    check('simple tier keeps 4 of 9', out.urlsFound === 4, String(out.urlsFound));
+  }
+
+  console.log('--- 10. over-budget searches are reported, not hidden');
+  {
+    const searchFor = (i) => ({ urls: [{ url: 'https://u' + i + '.example', why: 'w' }], searches_used: i === 2 ? 12 : 3 });
+    const { out } = await run({ request: 'r', questions: [{ q: 'a', complexity: 'simple' }, { q: 'b', complexity: 'simple' }] }, { searchFor });
+    check('one over budget', out.overBudget.length === 1 && out.overBudget[0].question === 'b' && out.overBudget[0].used === 12 && out.overBudget[0].budget === 4, JSON.stringify(out.overBudget));
+    check('searchesUsed summed', out.searchesUsed === 15);
+  }
+
+  console.log('--- 11. a searcher with no URLs is listed in noSources and spawns no reader');
+  {
+    const searchFor = (i) => ({ urls: i === 1 ? [] : [{ url: 'https://ok.example', why: 'w' }], searches_used: 1 });
+    const { out, trace } = await run({ request: 'r', questions: ['a', 'b'] }, { searchFor });
+    check('noSources names a', out.noSources.length === 1 && out.noSources[0] === 'a');
+    check('one reader only', starts(trace, 'read').length === 1);
+  }
+
+  console.log('--- 12. dead agents are counted in both stages, never hidden');
+  {
+    const searchFor = (i) => i === 1 ? null : { urls: [{ url: 'https://a.example', why: 'w' }, { url: 'https://b.example', why: 'w' }], searches_used: 1 };
+    const readFor = (url) => url === 'https://b.example' ? null : { relevant: true, findings: [] };
+    const { out } = await run({ request: 'r', questions: ['a', 'b'] }, { searchFor, readFor });
+    check('searched=1 of 2', out.searched === 1);
+    check('pagesRead=1 of 2', out.pagesRead === 1);
+    check('unreadable names b', out.unreadable.length === 1 && out.unreadable[0] === 'https://b.example');
+  }
+
+  console.log('--- 13. a finding with no quote is counted as unquoted; irrelevant pages counted');
+  {
+    const readFor = (url) => ({ relevant: false, findings: [{ claim: 'x', quote: '' }, { claim: 'y', quote: '  ' }, { claim: 'z', quote: 'real' }], note: 'paywalled' });
+    const { out } = await run({ request: 'r', questions: ['a'] }, { readFor });
+    check('unquoted=2', out.unquoted === 2, String(out.unquoted));
+    check('all three findings still returned', out.findings.length === 3);
+    check('page marked not relevant, note kept', out.pages[0].relevant === false && out.pages[0].note === 'paywalled');
+  }
+
+  console.log('--- 14. rejects an empty or blank question list');
   {
     const m1 = await expectThrow({ request: 'r', questions: [] });
     check('throws on []', m1 && /questions is empty/.test(m1), m1);
@@ -81,32 +180,12 @@ async function expectThrow(args) {
     check('throws on blank-only', m2 && /questions is empty/.test(m2), m2);
   }
 
-  console.log('--- 5. a finding with no source_url is counted as unsourced, kept in answers');
+  console.log('--- 15. no pages found at all -> no reader stage, empty results, still done');
   {
-    const answerFor = (i) => i === 1
-      ? { findings: [{ claim: 'sourced', source_url: 'https://a' }, { claim: 'bare', source_url: '' }, { claim: 'bare2', source_url: '   ' }], fetches_used: 2 }
-      : { findings: [{ claim: 'ok', source_url: 'https://b' }], unknowns: ['x'], fetches_used: 1 };
-    const { out } = await run({ request: 'r', questions: ['a', 'b'] }, { answerFor });
-    check('unsourced=2', out.unsourced === 2, String(out.unsourced));
-    check('all findings still returned', out.answers[0].findings.length === 3);
-    check('fetches summed', out.fetchesUsed === 3, String(out.fetchesUsed));
-  }
-
-  console.log('--- 6. an agent that reports more fetches than its budget is listed as over budget');
-  {
-    const answerFor = (i) => ({ findings: [], fetches_used: i === 2 ? 31 : 25 });
-    const { out } = await run({ request: 'r', questions: ['a', 'b'] }, { answerFor });
-    check('one over budget', out.overBudget.length === 1, JSON.stringify(out.overBudget));
-    check('names the question and both numbers', out.overBudget[0].question === 'b' && out.overBudget[0].budget === 25 && out.overBudget[0].used === 31);
-    check('exactly at budget is not over', !out.overBudget.some(o => o.question === 'a'));
-  }
-
-  console.log('--- 7. an agent returning nothing is counted, not hidden');
-  {
-    const { out } = await run({ request: 'r', questions: ['a', 'b'] }, { nullIdx: new Set([2]) });
-    check('dispatched=2 answered=1', out.dispatched === 2 && out.answered === 1);
-    check('the answered one is kept', out.answers.length === 1 && out.answers[0].question === 'a');
-    check('researchIsDone flag', out.researchIsDone === true);
+    const searchFor = () => ({ urls: [], searches_used: 1 });
+    const { out, trace } = await run({ request: 'r', questions: ['a'] }, { searchFor });
+    check('zero readers', starts(trace, 'read').length === 0);
+    check('empty findings, done flag', out.findings.length === 0 && out.researchIsDone === true);
   }
 
   console.log('\n' + PASS + ' passed, ' + FAIL + ' failed');

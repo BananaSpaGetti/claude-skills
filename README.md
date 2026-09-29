@@ -110,13 +110,27 @@ git write command.
 Phase 2's outside-the-repository research got the same treatment on 2026-09-29, after a run
 showed what the prose cost: five web sweeps dispatched as `general-purpose` with the model
 omitted — so inherited opus — ran 130 to 193 turns each and were 83% of the run's ~$47 in
-API-equivalent tokens, 58% of that re-reading pages already fetched. So research is
-`plugins/patimakorn/workflows/research.workflow.js`: one `general-purpose` agent per question at
-`sonnet` and `effort: medium`, a fetch budget in every prompt (default 25), every finding carrying
-the URL it was read from, and the return counting `fetchesUsed`, `unsourced` findings and
-`overBudget` agents so phase 7 prints them. The old Rule 1 row said *omit* on the theory that
-weighing sources needs the strongest model; weighing them is the interview's job, from the
-citations.
+API-equivalent tokens, 58% of that re-reading pages already fetched. Measuring the sweeps
+before fixing them mattered: they made 116–122 web calls each with **zero repeats** and reached
+new domains at a flat rate to the end, so a cap on fetches would have thrown away real breadth.
+The cost was not the breadth; it was every fetched page staying in one context and being
+re-read on every later turn.
+
+So `plugins/patimakorn/workflows/research.workflow.js` is two stages, the shape Anthropic
+describes for its own research system: a **searcher** per question that returns URLs and never
+holds a page body, then a **reader** per distinct URL that holds exactly one page, returns
+findings with verbatim quotes, and ends. Breadth is unchanged; cost is linear in pages instead
+of quadratic in fetches. Each question carries a `complexity` — `simple`, `comparison`,
+`complex` — whose search budgets are Anthropic's published per-agent call ranges, because the
+failure mode they name is "overinvestment in straightforward queries". The searcher keeps the
+session's model at `effort: low` (Anthropic's cost reference measured a frontier model at low
+beating the mid tier on deep research at ~10% less per task, and near-flat effort curves for
+research); the reader is `sonnet` at low, because its output is checkable — the quote must be on
+the page. The return counts `searchesUsed`, `urlsFound`, `pagesRead`, `noSources`, `unreadable`,
+`unquoted` and `overBudget`, and phase 7 prints them all.
+
+Sources: [How we built our multi-agent research system](https://www.anthropic.com/engineering/multi-agent-research-system)
+and the cost-optimization reference bundled with Claude Code's `claude-api` skill.
 
 The only dispatch that still keeps the session model on purpose is the phase 6 review finders —
 those returned fifteen confirmed findings per round for under 8% of a run's cost. The phase 5
@@ -136,9 +150,10 @@ execute script, this one has not yet been run on a real plan; Known gaps says so
 All three scripts have tests — `execute.workflow.test.js` (22 assertions over ordering,
 concurrency, stranded dependents, cycles and the risk-marker guard), `orient.workflow.test.js`
 (31 over the dispatch shape, the empty-list refusal, dead-agent accounting, the file union and
-unsourced answers) and `research.workflow.test.js` (22 over the model/effort pin, the budget in
-the prompt and its overrides, unsourced findings and over-budget reporting). Each stubs the
-agent, so they cost nothing and need no network:
+unsourced answers) and `research.workflow.test.js` (43 over the two-stage shape, per-stage
+model and effort pins, complexity tiers and their overrides, URL dedup across questions, the
+page cap, dead agents in both stages, unquoted findings and over-budget searchers). Each stubs
+the agent, so they cost nothing and need no network:
 `node plugins/patimakorn/workflows/<name>.workflow.test.js`.
 
 One command ships. What has and has not been proven about it is tracked in Known gaps — start
@@ -314,13 +329,16 @@ contradicts a box here is the stale one.**
       nobody commits separately. Closing the first half needs a plan with at least one `risk: none`
       task. The second is a real gap in the rule, not in the run: phase 5 step 1's exemptions say
       what stays in the conversation and nothing says how those tasks reach git.
-- [ ] **The research script has never been run, and its fetch budget is self-reported.** Added
-      2026-09-29 after the sweep measurement above. The script pins `sonnet` and `effort: medium`
-      in code, which no run can drift from; the budget lives in the prompt and the agent reports
-      `fetches_used` itself, so an overrun is caught by the number being wrong or the `overBudget`
-      list being non-empty, not by the runtime stopping it. Ticks when a plan on disk records
-      research counts in its phase 7 report and the agent transcripts show fetch counts at or under
-      the budget — the transcript count is the check on the self-report.
+- [ ] **The two-stage research script has never been run, and two of its claims are untested.**
+      Added 2026-09-29 after the sweep measurement above. Enforced in code, so no run can drift:
+      one page per reader, the reader's model and effort, the searcher's effort, URL dedup, the
+      page cap. Self-reported, so caught by the report rather than the runtime: a searcher's
+      `searches_used`. Untested until a real run: that a searcher told "search only" does not
+      fetch (a fetch there is a page paid for twice — the transcripts will show it), and that
+      the per-question tiers produce the same breadth the 116-call sweeps did at a fraction of
+      the cost — the number this box exists to get. Ticks when a plan on disk records research
+      counts in its phase 7 report, the searcher transcripts show no `WebFetch`, and the run's
+      research cost is beside the ~$38 the sweeps cost.
 - [x] The script version ran its interview, plan, execute and review phases on this repository on
       2026-09-12, under plan `ready-for-public`. **The split, which is the number that decides
       whether it fixed the prose version's defect: of the 4 tasks that have executed, 3 went to the script

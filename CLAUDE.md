@@ -81,11 +81,15 @@ one dispatch", and a 43-executor run dispatched zero. The script refuses an empt
 which is that floor written where it cannot be forgotten. Added 2026-09-16; first real run
 2026-09-16 (`orient: … 6 dispatched` on a plan in another repository).
 
-`research.workflow.js` is phase 2's outside-the-repository research: one `general-purpose`
-subagent per question at `sonnet` and `effort: medium`, a fetch budget in every prompt, every
-finding carrying its URL. The prose it replaced said *omit* the model for research; on
-2026-09-29 five such sweeps inherited opus, ran 130–193 turns each and were 83% of a run's cost.
-Added 2026-09-29 and, as of that date, never run on a real plan — README's Known gaps says so.
+`research.workflow.js` is phase 2's outside-the-repository research, in two stages: a searcher
+per question (session model, `effort: low`, search only, returns URLs) then a reader per distinct
+URL (`sonnet`, `effort: low`, one page per context, returns findings with verbatim quotes). The
+single-agent prose it replaced inherited opus and, on 2026-09-29, five such sweeps ran 116–122
+web calls each — zero repeats, real breadth — and were 83% of a run's cost, 58% of it re-reading
+pages already in context. The two stages keep the breadth and make the cost linear. Budgets per
+question come from a `complexity` tier whose numbers are Anthropic's published per-agent call
+ranges. Added 2026-09-29 and, as of that date, never run on a real plan — README's Known gaps
+says so and names what a first run has to show.
 
 Two runtime constraints are load-bearing and easy to break by accident. The workflow runtime gives
 scripts **no filesystem and no Node API**, so the plan is parsed by the main loop and arrives via
@@ -96,9 +100,9 @@ Each script has a test beside it that stubs the agent, needs no network and cost
 `execute.workflow.test.js` asserts ordering, concurrency, stranded dependents, cycle detection,
 unknown blockers and the risk-marker guard; `orient.workflow.test.js` asserts the dispatch shape
 (`Explore`, `sonnet`, schema), the empty-list refusal, that a dead agent is counted rather than
-hidden, the file union, and unsourced answers; `research.workflow.test.js` asserts the model and
-effort pin, the budget in the prompt and its per-question override, unsourced findings, and
-over-budget reporting:
+hidden, the file union, and unsourced answers; `research.workflow.test.js` asserts the two-stage
+shape, per-stage model and effort pins, complexity tiers and overrides, URL dedup across
+questions, the page cap, dead agents in both stages, unquoted findings and over-budget searchers:
 
 ```
 node plugins/patimakorn/workflows/execute.workflow.test.js

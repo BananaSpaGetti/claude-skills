@@ -54,7 +54,7 @@ accident* never is. So decide, every time, from this table:
 | Phase 1 orient — locate files, trace how a flow is wired, find callers | `Explore`, via `orient.workflow.js` | `sonnet`, set by the script | Retrieval. The judgement is in reading the result, not producing it. The script passes `model: sonnet` itself, so this row is what it does rather than what you must remember. |
 | Phase 2 — read a file, a config, or the git history to settle one fact | `Explore` | `sonnet` | Retrieval. |
 | Phase 2 — summarize sources already identified | `general-purpose` | `sonnet` | Summarization of text someone else chose. |
-| Phase 2 — research outside the repository: a spec, a vendor's number, a market figure, whether a standard still applies | `general-purpose`, via `research.workflow.js` | `sonnet`, set by the script | Retrieval with citations. The script pins the model, sets `effort: medium`, and gives each question a fetch budget. This row used to say *omit* on the theory that weighing sources needs the strongest model; measured on 2026-09-29, five such sweeps inherited opus, ran 130–193 turns each, and were 83% of the run's cost — 58% of it re-reading pages already fetched. Weighing the sources is the interview's job, from the citations the script returns. |
+| Phase 2 — research outside the repository: a spec, a vendor's number, a market figure, whether a standard still applies | `general-purpose` ×2 stages, via `research.workflow.js` | searcher: *inherit*, `effort: low`; reader: `sonnet`, `effort: low` — both set by the script | Two stages so no page is ever re-read: a searcher per question that returns URLs and never holds a page body, then a reader per URL that holds exactly one page and ends. The searcher judges which sources are worth reading, on a tiny context, so it keeps the frontier model at low effort — Anthropic's cost reference measured a frontier model at `low` beating the mid tier on deep research at ~10% less per task, and research effort curves nearly flat. The reader extracts with a verbatim quote, a checkable output, so `sonnet` at low. Measured 2026-09-29 before this: five single-agent sweeps at inherited opus, 116–122 fetches each with zero repeats, 83% of the run's cost, 58% of it re-reading pages already fetched. Breadth was real; the cost was the re-reading. |
 | Phase 5 — execute one task | `patimakorn:executor` | *omit* | The agent's own frontmatter pins `model: sonnet`; passing `model` here would override it. |
 | Phase 6 — review finders | whatever the `code-review` skill dispatches | *omit* | Cross-file, domain-specific defect hunting. |
 
@@ -237,19 +237,32 @@ Rules:
     Workflow({
       script: "<the contents of research.workflow.js, verbatim>",
       args: {
-        request:    "<the requested work, verbatim>",
-        questions:  ["<one question per fact>", { q: "<a bigger one>", maxFetches: 40 }],
-        maxFetches: 25,                              // default per question; omit for 25
-        hints:      ["https://..."]                  // omit if none
+        request:   "<the requested work, verbatim>",
+        questions: [
+          { q: "<one fact>",                    complexity: "simple" },      // 4 searches, 4 URLs
+          { q: "<a few sources side by side>",  complexity: "comparison" },  // 10 searches, 10 URLs — the default
+          { q: "<a whole landscape>",           complexity: "complex" }      // 15 searches, 20 URLs
+        ],
+        hints: ["https://..."]                       // omit if none
+        // searchModel / readModel / searchEffort / readEffort override the defaults; maxPages caps the run (60)
       }
     })
     ```
 
-    It dispatches one `general-purpose` agent per question at `sonnet`, `effort: medium`, with the
-    fetch budget in the prompt, and returns `findings` each carrying the URL it was read from,
-    `unknowns`, `fetchesUsed`, `unsourced` (findings with no URL) and `overBudget` (agents that
-    reported using more than their ceiling). **A finding with no URL is not a fact** — it goes to
-    the user as a question, not into the plan as context. Both counts reach phase 7.
+    **Say how hard each question is.** The tiers are Anthropic's own per-agent call ranges for its
+    research system — "1 agent with 3-10 tool calls" for a simple fact, "10-15 calls each" for a
+    comparison, more than ten agents for complex research — and the failure mode they name is
+    "overinvestment in straightforward queries". A question you cannot place is `comparison`.
+
+    Two stages, so no page is ever read twice. A **searcher** per question — the session's model at
+    `effort: low`, searching only, never fetching — returns up to the tier's URLs. Then a **reader**
+    per distinct URL — `sonnet` at `effort: low`, one page per context — returns `findings` each
+    with a verbatim `quote`. A URL two questions surfaced is read once. The return carries
+    `findings` (claim, quote, `source_url`, which questions), `pages`, `noSources` (questions whose
+    searcher found nothing), `unreadable`, `unquoted` (findings whose reader gave no quote), and
+    `overBudget` (searchers reporting more searches than their tier). **A finding with no quote is
+    not a fact** — it goes to the user as a question, not into the plan as context. Every count
+    reaches phase 7.
 
   Neither script is optional for a fact it can reach. Dispatching a `general-purpose` agent
   yourself with the model omitted is how five research sweeps inherited opus and ran 130–193
@@ -611,11 +624,12 @@ before) writes `status: blocked` with `reason: acceptance not asked`, never `don
     script refuses an empty list. The honest alternatives are a number, or `skipped, already
     mapped` with the reason. A report that cannot produce either is a run that read the repository
     into the main conversation instead, and this line is where that becomes visible.
-  - **the same for phase 2 research**, from the research script's return: questions dispatched,
-    `fetchesUsed` in total, `unsourced` findings, and every entry in `overBudget` with its
-    numbers. A research question answered by an agent you dispatched yourself, outside the
-    script, is reported here by name with the model it ran on — that is the path that cost 83% of
-    a run, and the report is where it stops being invisible.
+  - **the same for phase 2 research**, from the research script's return: questions dispatched
+    with their tiers, `searchesUsed`, `urlsFound` and `pagesRead`, `noSources`, `unreadable`,
+    `unquoted`, and every entry in `overBudget` with its numbers. A research question answered by
+    an agent you dispatched yourself, outside the script, is reported here by name with the model
+    it ran on and how many fetches it made — that is the path that cost 83% of a run, and the
+    report is where it stops being invisible.
   - tasks done / total, and **how many went to the script versus stayed in this conversation** —
     the script's return value carries `dispatched`, so this is a count, not an impression. Name
     each main-loop task and which line of phase 5 step 1 exempted it. A run where that list is

@@ -6,16 +6,23 @@ independent — install only the ones you want.
 ## Install
 
 ```
+claude plugin install patimakorn --marketplace BananaSpaGetti/claude-skills
+```
+
+One command: `--marketplace` adds the marketplace first if it is not known yet, then installs
+the plugin from it. The two-step form does the same thing and is what `/plugin` inside a session
+offers:
+
+```
 /plugin marketplace add BananaSpaGetti/claude-skills
 /plugin install patimakorn@claude-skills
 ```
 
-**The repository is private as of 2026-09-03, so those commands work only for its owner.** They
-were run for real on 2026-08-28 (under the plugin's former name) and again on 2026-08-30: the
-marketplace cloned and validated, and the plugin unpacked complete into
-`~/.claude/plugins/cache/claude-skills/`. Both runs were authenticated as the owner, which is
-not the same test as a stranger's, and the difference is tracked in Known gaps below. Plugins
-load at session start, so restart Claude Code afterwards.
+The repository has been public since 2026-10-13. The one-command form was run that day from a
+clean state — marketplace removed, plugin uninstalled — and came back with the marketplace
+cloned, validated and the plugin installed at its current version. That run was still the
+owner's machine; a stranger's install is tracked in Known gaps below. Plugins load at session
+start, so restart Claude Code afterwards.
 
 A plugin command is addressed as `<plugin>:<command>`, so the command below is
 `/patimakorn:anvil`. A bare `/anvil` does not resolve to it.
@@ -265,25 +272,27 @@ do and what past runs measured; **this section is where the ticks live, and a st
 contradicts a box here is the stale one.**
 
 - [x] `claude plugin validate` passes on the marketplace and all five plugins
-- [ ] **The repository is private.** No stranger has installed anything here. The install above
-  was run twice by the owner while authenticated — under the plugin's former name on 2026-08-28
-  and under the current one on 2026-08-30 — which proves the manifest resolves and the plugin
-  unpacks, and proves nothing about anonymous access. Baseline, taken while private, needing no
-  `gh auth logout` — this is the logged-out test to re-run. Use `curl.exe`, not `curl`: in
-  PowerShell 5.1 the bare name is an alias for `Invoke-WebRequest`, which has no `-s` and no `-w`
-  and dies on a parameter-binding error that reads nothing like a failed check.
+- [ ] **The repository is public; no stranger has installed anything here yet.** Private from
+  2026-09-03 to 2026-10-13, when its history was rewritten to carry only the no-reply address
+  (one personal path and one real e-mail had got in) and it was made public. The install was
+  run by the owner while authenticated under the plugin's former name on 2026-08-28, under the
+  current one on 2026-08-30, and from a clean state with the one-command form on 2026-10-13 —
+  which proves the manifest resolves and the plugin unpacks, and proves nothing about a
+  stranger's machine. The anonymous-read check, needing no `gh auth logout`. Use `curl.exe`,
+  not `curl`: in PowerShell 5.1 the bare name is an alias for `Invoke-WebRequest`, which has no
+  `-s` and no `-w` and dies on a parameter-binding error that reads nothing like a failed check.
 
   ```
   curl.exe -s -o /dev/null -w "%{http_code}" https://raw.githubusercontent.com/BananaSpaGetti/claude-skills/main/.claude-plugin/marketplace.json
   curl.exe -s -o /dev/null -w "%{http_code}" https://api.github.com/repos/BananaSpaGetti/claude-skills
   ```
 
-  Both currently print `404`. Note what this does and does not prove: two `200`s show the objects
-  are anonymously readable, which is necessary but not sufficient — they exercise neither
-  `/plugin marketplace add` nor `/plugin install`, so a manifest that fetches but fails to clone,
-  validate or unpack would still pass. This box gets ticked only after the repo is public, both
-  commands print `200`, **and** the two install commands at the top of this file have actually
-  been run by someone who is not the owner.
+  Both printed `404` while private and `200` on 2026-10-13. Note what this does and does not
+  prove: two `200`s show the objects are anonymously readable, which is necessary but not
+  sufficient — they exercise neither `/plugin marketplace add` nor `/plugin install`, so a
+  manifest that fetches but fails to clone, validate or unpack would still pass. This box gets
+  ticked only when the install command at the top of this file has actually been run by someone
+  who is not the owner.
 - [x] `anvil` run on a real repo, start to finish, twice — on this one. Both runs are in the
       history under `plan(<slug>)` commits; their plan files were deleted at close-out. The
       first (`anvil-self-test`, `b218a09..2950089`) went through all eight phases but was cut to

@@ -74,6 +74,11 @@ binding. Treat all of them as code, not documentation.
 
 `execute.workflow.js` is phase 5 of `/patimakorn:anvil`: the script that dispatches one executor
 subagent per task. The same instruction written as prose was followed once in twenty-two chances.
+Since 2026-10-12 it runs every task at `effort: low` and re-runs a failed verify once at `high`
+— the ladder Anthropic measured on coding work at the same pass rate for half the cost, safe
+because every task carries its own checker. `executorModel`, `retryModel`, `firstEffort`,
+`retryEffort` and `retry` are arguments; the return's `retried` list is what says whether the
+cheap first pass is earning its place.
 
 `orient.workflow.js` is phase 1: the script that dispatches one read-only `Explore` subagent per
 orientation question and returns the files they found. The prose it replaced said "the floor is
@@ -98,7 +103,8 @@ because they would break resume; stamp timestamps after the workflow returns.
 
 Each script has a test beside it that stubs the agent, needs no network and costs nothing.
 `execute.workflow.test.js` asserts ordering, concurrency, stranded dependents, cycle detection,
-unknown blockers and the risk-marker guard; `orient.workflow.test.js` asserts the dispatch shape
+unknown blockers, the risk-marker guard, and the effort ladder (low first, one retry at high,
+no retry on a contradiction or a dead executor, every knob); `orient.workflow.test.js` asserts the dispatch shape
 (`Explore`, `sonnet`, schema), the empty-list refusal, that a dead agent is counted rather than
 hidden, the file union, and unsourced answers; `research.workflow.test.js` asserts the two-stage
 shape, per-stage model and effort pins, complexity tiers and overrides, URL dedup across

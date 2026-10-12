@@ -96,10 +96,17 @@ log('dispatching ' + QUESTIONS.length + ' question(s), one Explore agent each')
 
 // Every question is independent, so they all go out at once. The runtime caps how many
 // run at a time and queues the rest.
+// `sonnet` by default -- retrieval, and the one row of Rule 1 that was measured cheap. `model`
+// and `effort` are arguments so a cheaper tier is one line to try; the `unsourced` count below
+// is what says whether it is paying for itself.
+const MODEL  = IN.model  || 'sonnet'
+const EFFORT = IN.effort || 'low'
+
 const answers = await parallel(QUESTIONS.map((q, i) => () =>
   agent(promptFor(q, i), {
     agentType: 'Explore',
-    model: 'sonnet',
+    model: MODEL,
+    effort: EFFORT,
     phase: 'Orient',
     schema: ANSWER_SCHEMA,
     label: 'orient ' + (i + 1) + ': ' + q.slice(0, 60),

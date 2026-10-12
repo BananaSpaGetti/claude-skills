@@ -19,25 +19,28 @@ function check(name, cond, extra) {
   else { FAIL++; console.log('  FAIL ' + name + (extra ? '  <- ' + extra : '')); }
 }
 
-// stub agent: records start/end order, resolves after a tick, fails ids in failSet
-function stubAgent(trace, failSet) {
+// stub agent: records start/end order (and effort/model), resolves after a tick.
+// failSet: ids that fail every attempt. failOnceSet: ids that fail the first attempt only.
+function stubAgent(trace, failSet, failOnceSet = new Set()) {
+  const seen = new Map();
   return async (prompt, opts) => {
     const id = (opts.label.match(/task ([^:\s]+)/) || [])[1];
-    trace.push({ ev: 'start', id, at: trace.length });
+    const attempt = (seen.get(id) || 0) + 1; seen.set(id, attempt);
+    trace.push({ ev: 'start', id, at: trace.length, effort: opts.effort, model: opts.model, attempt, label: opts.label });
     await new Promise(r => setImmediate(r));
     await new Promise(r => setImmediate(r));
     trace.push({ ev: 'end', id, at: trace.length });
-    if (failSet.has(id)) return { filesTouched: [], verifyCommand: 'x', verifyStdout: 'boom', passed: false, summary: 'failed' };
+    if (failSet.has(id) || (failOnceSet.has(id) && attempt === 1)) return { filesTouched: [], verifyCommand: 'x', verifyStdout: 'boom', passed: false, summary: 'failed' };
     return { filesTouched: ['a.txt'], verifyCommand: 'cat a.txt', verifyStdout: 'ok', passed: true, summary: 'done' };
   };
 }
 
 const noop = () => {};
-async function run(tasks, failIds = []) {
+async function run(tasks, failIds = [], extra = {}, failOnceIds = []) {
   const trace = [];
   const out = await wf(
-    { goal: 'g', context: 'c', tasks },
-    stubAgent(trace, new Set(failIds)),
+    { goal: 'g', context: 'c', tasks, ...extra },
+    stubAgent(trace, new Set(failIds), new Set(failOnceIds)),
     null, null, noop, noop, null, null
   );
   return { out, trace };
@@ -159,6 +162,77 @@ async function expectThrow(tasks) {
     );
     check('not counted as passed despite passed:true', out.passed.length === 0, JSON.stringify(out.passed));
     check('contradiction surfaced', out.failed[0] && /spec says X/.test(out.failed[0].contradiction), JSON.stringify(out.failed));
+  }
+
+  console.log('--- 11. every first attempt runs at low effort with no model passed');
+  {
+    const { out, trace } = await run([{ id: 1, title: 'a', blockedBy: [], risk: 'none' }]);
+    const s = trace.filter(t => t.ev === 'start');
+    check('one attempt', s.length === 1);
+    check('effort low', s[0].effort === 'low', s[0].effort);
+    check('no model key (frontmatter pin applies)', !('model' in s[0]) || s[0].model === undefined);
+    check('effort echoed in return', out.effort.first === 'low' && out.effort.retry === 'high');
+    check('attempts=1 on the passed entry', out.passed[0].attempts === 1);
+    check('retried list empty', Array.isArray(out.retried) && out.retried.length === 0);
+  }
+
+  console.log('--- 12. a task that fails its verify at low is re-run once at high, and passes');
+  {
+    const { out, trace } = await run([{ id: 1, title: 'a', blockedBy: [], risk: 'none' }], [], {}, ['1']);
+    const s = trace.filter(t => t.ev === 'start');
+    check('two attempts', s.length === 2, String(s.length));
+    check('first low, second high', s[0].effort === 'low' && s[1].effort === 'high', s.map(x => x.effort).join(','));
+    check('retry label says so', /retry at high/.test(s[1].label), s[1].label);
+    check('counted as passed', out.passed.length === 1 && out.failed.length === 0);
+    check('attempts=2', out.passed[0].attempts === 2);
+    check('retried entry with passedOnRetry=true', out.retried.length === 1 && out.retried[0].id === '1' && out.retried[0].passedOnRetry === true);
+  }
+
+  console.log('--- 13. a task that fails both attempts is failed with attempts=2; dependents still stranded');
+  {
+    const { out, trace } = await run([
+      { id: 1, title: 'a', blockedBy: [], risk: 'none' },
+      { id: 2, title: 'b', blockedBy: [1], risk: 'none' },
+    ], ['1']);
+    const s1 = trace.filter(t => t.ev === 'start' && t.id === '1');
+    check('task 1 tried twice', s1.length === 2);
+    check('task 2 never dispatched', !trace.some(t => t.ev === 'start' && t.id === '2'));
+    check('failed with attempts=2', out.failed.length === 1 && out.failed[0].attempts === 2);
+    check('retried entry with passedOnRetry=false', out.retried.length === 1 && out.retried[0].passedOnRetry === false);
+  }
+
+  console.log('--- 14. a contradiction is never retried, and neither is a dead executor');
+  {
+    const trace = [];
+    const agent = async (prompt, opts) => {
+      const id = (opts.label.match(/task ([^:\s]+)/) || [])[1];
+      trace.push({ id, effort: opts.effort });
+      await new Promise(r => setImmediate(r));
+      if (id === '1') return { filesTouched: [], verifyCommand: '', verifyStdout: '', passed: false, summary: 's', contradiction: 'plan names a file that does not exist' };
+      return null;
+    };
+    const out = await wf({ goal: 'g', context: 'c', tasks: [
+      { id: 1, title: 'a', blockedBy: [], risk: 'none' },
+      { id: 2, title: 'b', blockedBy: [], risk: 'none' },
+    ] }, agent, null, null, noop, noop, null, null);
+    check('contradiction: one attempt only', trace.filter(t => t.id === '1').length === 1);
+    check('dead executor: one attempt only', trace.filter(t => t.id === '2').length === 1);
+    check('both in failed, none in retried', out.failed.length === 2 && out.retried.length === 0);
+  }
+
+  console.log('--- 15. the ladder is configurable: effort levels, executorModel, retryModel, retry:false');
+  {
+    const { out, trace } = await run([{ id: 1, title: 'a', blockedBy: [], risk: 'none' }], [], { firstEffort: 'medium', retryEffort: 'max', executorModel: 'haiku', retryModel: 'sonnet' }, ['1']);
+    const s = trace.filter(t => t.ev === 'start');
+    check('first: medium on haiku', s[0].effort === 'medium' && s[0].model === 'haiku', JSON.stringify([s[0].effort, s[0].model]));
+    check('retry: max on sonnet', s[1].effort === 'max' && s[1].model === 'sonnet', JSON.stringify([s[1].effort, s[1].model]));
+    check('return names the models', out.effort.executorModel === 'haiku' && out.effort.retryModel === 'sonnet');
+    const noRetry = await run([{ id: 1, title: 'a', blockedBy: [], risk: 'none' }], ['1'], { retry: false });
+    check('retry:false -> one attempt, failed', noRetry.trace.filter(t => t.ev === 'start').length === 1 && noRetry.out.failed.length === 1);
+    check('retry:false -> effort.retry is null', noRetry.out.effort.retry === null);
+    const sameModel = await run([{ id: 1, title: 'a', blockedBy: [], risk: 'none' }], [], { executorModel: 'haiku' }, ['1']);
+    const s2 = sameModel.trace.filter(t => t.ev === 'start');
+    check('retryModel defaults to executorModel', s2[1].model === 'haiku', s2[1].model);
   }
 
   console.log('\n' + PASS + ' passed, ' + FAIL + ' failed');

@@ -472,7 +472,13 @@ Workflow({
         risk: "none",
         needsFailingTest: false      // true when verify: names a test that does not exist yet
       }
-    ]
+    ],
+    // Effort ladder, all optional. Defaults: every task at `low`; a task that fails its own
+    // verify is re-run once at `high`. No model is passed, so the executor's frontmatter pin
+    // (`sonnet`) runs. `executorModel: "haiku"` tries a cheaper tier on the first attempt only --
+    // the retry still climbs to `retryModel` (default: same as executorModel, so set it to
+    // "sonnet" to climb tiers). `retry: false` runs everything once at `firstEffort`.
+    firstEffort: "low", retryEffort: "high", executorModel: undefined, retryModel: undefined, retry: true
   }
 })
 ```
@@ -509,9 +515,18 @@ again.
 `blocked-by`, or a risk marker aborts the run before any agent starts), then starts each task the
 moment *its own* blockers land rather than waiting for a whole wave. Each executor runs on
 `patimakorn:executor`, which pins `model: sonnet` in its own frontmatter — the script passes no
-`model`, so that pin is what takes effect. Every result is schema-validated: `filesTouched`,
+`model` unless you set `executorModel`, so that pin is what takes effect. **Every task runs at
+`effort: low` first; one that comes back `passed: false` is re-run once at `high`.** Anthropic's
+cost reference measured this ladder on coding work: everything at low with failures re-run at
+the default passed ~93% for ~$0.70 per task, against 91.7% for $1.39 running everything at the
+default — the same pass rate for half the cost, made safe by a checker, which here is the task's
+own `verify:`. A `contradiction` is not retried (it is the plan that is wrong, not the effort),
+and neither is a dead executor. Every result is schema-validated: `filesTouched`,
 `verifyCommand`, `verifyStdout`, `passed`, `summary`, and an optional `contradiction`. A task
-whose blocker failed is never dispatched and comes back under `skipped`.
+whose blocker failed is never dispatched and comes back under `skipped`. The return carries
+`effort` (what ran) and `retried` (which tasks took two attempts, and whether the second
+passed) — phase 7 prints both, and a high retry rate on a cheap `executorModel` means you paid
+for two attempts where one at `sonnet` would have done.
 
 ### 3. Verify every task yourself
 
@@ -530,8 +545,15 @@ git commit -m "plan(<slug>) task <N>: <title>"
 Committing stays here because concurrent agents would race on `.git/index.lock`, which is also
 why the executors are forbidden every git write command.
 
-Write the resulting sha into that task's `commit:` field and set `state: done`. Append a Log line.
-Commit the plan-file update itself as `plan(<slug>): task <N> done`.
+Write the resulting sha into that task's `commit:` field and set `state: done`, and append a Log
+line — **but edit the plan file once per workflow run, after the last task commit, not once per
+task.** One commit per task is what makes any task revertable alone; the plan file is not a task,
+and a second commit per task doubled the main loop's commit count on a 23-task run (46+ turns on
+the session model, each a file edit and a `git commit`). So: commit the code for every task in
+order, then update every `commit:`, `state:` and Log line in one edit and commit it once as
+`plan(<slug>): tasks <first>-<last> done`. A resume that lands between the last task commit and
+the plan commit sees `state: doing` on tasks whose code is in `git log` — the sha is the proof,
+the plan field is the record; reconcile from the log and say so.
 
 ### 5. If a task failed
 
@@ -557,16 +579,26 @@ Do not start work that depends on a failed task.
 
 Set `status: reviewing`. Then loop, at most **3 fixing rounds**:
 
-1. Run the `code-review` skill over the range `<first task commit>..HEAD`.
+1. Run the `code-review` skill **at `medium`** over the range `<first task commit>..HEAD` —
+   `/code-review medium <range>`. Name the level every time: with no level given the skill reuses
+   whatever was typed last in the session, which on 2026-09-29 was a stale `xhigh` and cost ten
+   finder agents plus verifiers for a three-line diff.
 2. Fix every finding you are confident in. Commit as `plan(<slug>): review fixes round <N>`.
 3. Re-run the plan's `verify:` commands.
 4. If the review came back with nothing, stop the loop.
 
-Then run **one closing pass that fixes nothing**, over the last fixing round's own diff. Each
-round's fixes are themselves unreviewed code, and the last round's never get a turn — without
-this pass the loop ships exactly the changes nobody checked. If the closing pass finds something,
+Then run **one closing pass that fixes nothing**, over the last fixing round's own diff — **this
+one at `xhigh`**. Each round's fixes are themselves unreviewed code, and the last round's never
+get a turn — without this pass the loop ships exactly the changes nobody checked. The fixing
+rounds can afford a cheaper level because the next round catches what one misses; the closing
+pass has no next round, so it gets the thorough one. If the closing pass finds something,
 **report it, do not fix it**: a fix here would need its own review, and the cap exists to stop
 that regress. Note it as a follow-up instead.
+
+The split is a decision, not a measurement: `xhigh` returned fifteen confirmed findings on a
+9,200-line diff; `medium` has not yet been run on a diff that size. If a run's closing pass at
+`xhigh` finds what the `medium` rounds missed, that is the number that decides whether the
+fixing rounds move back up — write it in the report.
 
 After that, stop regardless. **State plainly what is still unresolved** — a capped loop that
 reports "clean" when it is not is worse than no loop at all. List each surviving finding and why
@@ -635,6 +667,12 @@ before) writes `status: blocked` with `reason: acceptance not asked`, never `don
     each main-loop task and which line of phase 5 step 1 exempted it. A run where that list is
     long did not follow this command, whatever else it achieved, and the report is where that
     becomes visible instead of only showing up on the bill.
+  - **the effort ladder's numbers**, from the same return: what `effort` ran (first and retry
+    levels, and the model if one was passed), and every task in `retried` with whether its second
+    attempt passed. The retry rate is the number that says whether `low` is doing this plan's
+    work: a few retries is the ladder paying for itself; most tasks retried means every task was
+    paid for twice, and the next run should start at `medium`. With an `executorModel` cheaper
+    than `sonnet`, the same line says whether that tier is earning its place.
   - verification results, with the real command output
   - review rounds run, and anything still open
   - what was skipped, and why

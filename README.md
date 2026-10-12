@@ -51,11 +51,17 @@ plan whose tree is dirty. Everywhere else it runs without checking in.
   durable reason — is written as an ADR instead, and vocabulary the interview had to pin down goes
   to a glossary. It uses whatever convention the repo already has; if there is none, the directory
   it would create is named at the approval step rather than appearing unannounced.
-- **One executor subagent per task, dispatched by a script.** Phase 5 hands the task list to
-  `plugins/patimakorn/workflows/execute.workflow.js`, and its `agent()` call is the only code path
-  that performs a task — see below for why that is a script and not an instruction. Executors are
-  forbidden from running git commands, since concurrent ones would race on `.git/index.lock`, so
-  the main loop commits each task sequentially instead. You keep `git revert <sha>` per task.
+- **One executor subagent per task, dispatched by a script, cheap first.** Phase 5 hands the
+  task list to `plugins/patimakorn/workflows/execute.workflow.js`, and its `agent()` call is the
+  only code path that performs a task — see below for why that is a script and not an
+  instruction. Every task runs at `effort: low`; one that fails its own `verify:` is re-run once
+  at `high`. Anthropic measured that ladder on coding work at the same pass rate for half the
+  cost, and the thing that makes it safe is the checker, which every task here carries. The
+  first-attempt model is a knob (`executorModel: "haiku"`), the retry climbs to `retryModel`, and
+  phase 7 prints the retry rate — the number that says whether the cheap tier is paying for
+  itself. Executors are forbidden from running git commands, since concurrent ones would race on
+  `.git/index.lock`, so the main loop commits each task sequentially instead. You keep
+  `git revert <sha>` per task.
 - **Review loop, capped at 3 fixing rounds**, then one closing pass that reports rather than
   fixes — otherwise the last round's own fixes ship unreviewed. The loop stops early once a
   review comes back clean, and at the cap it says plainly what is still unresolved rather than
@@ -339,6 +345,18 @@ contradicts a box here is the stale one.**
       the cost — the number this box exists to get. Ticks when a plan on disk records research
       counts in its phase 7 report, the searcher transcripts show no `WebFetch`, and the run's
       research cost is beside the ~$38 the sweeps cost.
+- [ ] **The executor effort ladder and the review levels are decisions with borrowed evidence,
+      not measurements on this tool.** Added 2026-10-12. Phase 5 runs every task at `low` and
+      re-runs a failed verify once at `high` — the shape Anthropic measured on coding work at the
+      same pass rate for half the cost. Phase 6 runs its fixing rounds at `medium` and the closing
+      pass at `xhigh` — a split chosen because the fixing rounds have a next round and the closing
+      pass does not; `medium` has never been run on a diff the size `xhigh` found fifteen bugs in.
+      Both are in code or named in the command, so neither can drift; neither has a number from
+      an anvil run yet. Ticks when a phase 7 report shows a retry rate (the ladder paying for
+      itself is a low one) and a closing pass at `xhigh` reports what the `medium` rounds missed —
+      zero, or a count that sends the fixing rounds back up. `executorModel: "haiku"` is a knob
+      for the same experiment one tier down, and the retry rate is its verdict too; Anthropic's
+      reference puts haiku at 63% on knowledge questions against 92%, so it is a knob, not a default.
 - [x] The script version ran its interview, plan, execute and review phases on this repository on
       2026-09-12, under plan `ready-for-public`. **The split, which is the number that decides
       whether it fixed the prose version's defect: of the 4 tasks that have executed, 3 went to the script

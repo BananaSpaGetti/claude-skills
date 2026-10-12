@@ -74,6 +74,16 @@ if (misrouted.length) {
 
 const byId = new Map(TASKS.map(t => [String(t.id), t]))
 
+// Effort and model per attempt. Defaults: `low` first, `high` on a failed verify, and no
+// model passed -- so the executor's own frontmatter pin (`sonnet`) is what runs. Every one of
+// these is an argument, so a cheaper or stronger tier is one line in the Workflow call rather
+// than an edit to this file. `retry: false` disables the ladder entirely.
+const FIRST_EFFORT = IN.firstEffort || 'low'
+const RETRY_EFFORT = IN.retryEffort || 'high'
+const FIRST_MODEL  = IN.executorModel || undefined
+const RETRY_MODEL  = IN.retryModel || IN.executorModel || undefined
+const RETRY        = IN.retry !== false
+
 // Validate the dependency graph before dispatching anything. A cycle would otherwise
 // recurse forever, and an unknown blocker would silently strand a task.
 const unknown = []
@@ -174,22 +184,54 @@ function run(t) {
       return { ok: false, id, title: t.title, skipped: true, reason: 'blocked by ' + why }
     }
 
-    const r = await agent(promptFor(t), {
-      agentType: 'patimakorn:executor',
-      phase: 'Execute',
-      schema: RESULT_SCHEMA,
-      label: 'task ' + id + (t.title ? ': ' + t.title : ''),
-    })
+    // Effort ladder: run cheap first, re-run only what failed its own verify at full effort.
+    // Anthropic's cost reference measured this on coding work -- everything at `low` and
+    // failures re-run at the default passed ~93% for ~$0.70 per task, against 91.7% for
+    // $1.39 running everything at the default. The same pass rate for half the cost, and the
+    // thing that makes it safe is a checker: here, the task's own `verify:`. A contradiction
+    // is not a failure of effort and is not retried; neither is an executor that died.
+    const dispatch = (effort, model, attempt) => {
+      const opts = {
+        agentType: 'patimakorn:executor',
+        effort,
+        phase: 'Execute',
+        schema: RESULT_SCHEMA,
+        label: 'task ' + id + (t.title ? ': ' + t.title : '') + (attempt > 1 ? ' (retry at ' + effort + ')' : ''),
+      }
+      // The executor's frontmatter pins `model: sonnet`; passing a model here overrides it.
+      // Left unset by default so the pin is what takes effect. `executorModel` is the knob for
+      // trying a cheaper tier -- the retry step still climbs to `retryModel`, so a cheap first
+      // pass that fails is caught by the verify and redone, not shipped.
+      if (model) opts.model = model
+      return agent(promptFor(t), opts)
+    }
 
-    if (!r) {
+    const first = await dispatch(FIRST_EFFORT, FIRST_MODEL, 1)
+
+    if (!first) {
       log('task ' + id + ' returned nothing - the executor died or was skipped')
       return { ok: false, id, title: t.title, reason: 'executor returned no result' }
     }
-    if (r.contradiction) {
+    if (first.contradiction) {
       log('task ' + id + ' stopped on a contradiction with the plan')
-      return { ok: false, id, title: t.title, contradiction: r.contradiction, result: r }
+      return { ok: false, id, title: t.title, contradiction: first.contradiction, result: first }
     }
-    return { ok: r.passed === true, id, title: t.title, result: r }
+    if (first.passed === true || !RETRY) {
+      return { ok: first.passed === true, id, title: t.title, result: first, attempts: 1 }
+    }
+
+    log('task ' + id + ' failed its verify at ' + FIRST_EFFORT + ' - retrying once at ' + RETRY_EFFORT)
+    const second = await dispatch(RETRY_EFFORT, RETRY_MODEL, 2)
+
+    if (!second) {
+      log('task ' + id + ' retry returned nothing - keeping the first result')
+      return { ok: false, id, title: t.title, reason: 'retry returned no result', result: first, attempts: 2, retried: true }
+    }
+    if (second.contradiction) {
+      log('task ' + id + ' retry stopped on a contradiction with the plan')
+      return { ok: false, id, title: t.title, contradiction: second.contradiction, result: second, attempts: 2, retried: true }
+    }
+    return { ok: second.passed === true, id, title: t.title, result: second, firstResult: first, attempts: 2, retried: true }
   })()
 
   started.set(id, p)
@@ -210,13 +252,19 @@ const done = settled.filter(r => r.ok)
 const failed = settled.filter(r => !r.ok && !r.skipped)
 const skipped = settled.filter(r => r.skipped)
 
-log(done.length + ' reported passing, ' + failed.length + ' failed, ' + skipped.length + ' never started')
+const retried = settled.filter(r => r.retried)
+log(done.length + ' reported passing, ' + failed.length + ' failed, ' + skipped.length + ' never started'
+  + (retried.length ? '; ' + retried.length + ' retried at ' + RETRY_EFFORT + ', ' + retried.filter(r => r.ok).length + ' of those passed' : ''))
 
 return {
   dispatched: TASKS.length,
-  passed: done.map(r => ({ id: r.id, title: r.title, ...r.result })),
-  failed: failed.map(r => ({ id: r.id, title: r.title, reason: r.reason, contradiction: r.contradiction, result: r.result })),
+  passed: done.map(r => ({ id: r.id, title: r.title, attempts: r.attempts, ...r.result })),
+  failed: failed.map(r => ({ id: r.id, title: r.title, attempts: r.attempts, reason: r.reason, contradiction: r.contradiction, result: r.result })),
   skipped: skipped.map(r => ({ id: r.id, title: r.title, reason: r.reason })),
+  // The ladder's own numbers. A high retry rate with a cheap `executorModel` means the cheap
+  // tier is not paying for itself -- you paid for both attempts. Phase 7 prints this.
+  effort: { first: FIRST_EFFORT, retry: RETRY ? RETRY_EFFORT : null, executorModel: FIRST_MODEL || 'frontmatter (sonnet)', retryModel: RETRY_MODEL || 'frontmatter (sonnet)' },
+  retried: retried.map(r => ({ id: r.id, title: r.title, passedOnRetry: r.ok })),
   // The main loop must still run every verify itself. `passed` above is the executor's
   // claim, schema-shaped but not independently checked.
   verifyIsStillTheMainLoopsJob: true,

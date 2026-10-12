@@ -59,12 +59,12 @@ async function expectThrow(args) {
     check('reported answered=3', out.answered === 3);
   }
 
-  console.log('--- 2. every dispatch is Explore at sonnet with the schema');
+  console.log('--- 2. every dispatch is Explore at haiku with the schema');
   {
     const { trace } = await run({ request: 'r', questions: ['a'] });
     const o = trace[0].opts;
     check('agentType Explore', o.agentType === 'Explore', o.agentType);
-    check('model sonnet', o.model === 'sonnet', o.model);
+    check('model haiku', o.model === 'haiku', o.model);
     check('schema present', o.schema && o.schema.type === 'object');
     check('label carries the question', /orient 1: a/.test(o.label), o.label);
   }
@@ -139,12 +139,12 @@ async function expectThrow(args) {
     check('empty array', Array.isArray(out.unsourced) && out.unsourced.length === 0);
   }
 
-  console.log('--- 10. model and effort default to sonnet/low and are overridable');
+  console.log('--- 10. model and effort default to haiku/low and are overridable');
   {
     const d = await run({ request: 'r', questions: ['a'] });
     check('default effort low', d.trace[0].opts.effort === 'low', d.trace[0].opts.effort);
-    const o = await run({ request: 'r', questions: ['a'], model: 'haiku', effort: 'medium' });
-    check('model override', o.trace[0].opts.model === 'haiku', o.trace[0].opts.model);
+    const o = await run({ request: 'r', questions: ['a'], model: 'sonnet', effort: 'medium' });
+    check('model override', o.trace[0].opts.model === 'sonnet', o.trace[0].opts.model);
     check('effort override', o.trace[0].opts.effort === 'medium', o.trace[0].opts.effort);
   }
 

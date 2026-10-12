@@ -30,7 +30,11 @@ export const meta = {
 // research at ~10% less per task. So the searcher -- the stage that judges which sources are
 // worth reading, on a context that never holds a page -- defaults to the session's frontier
 // model at low effort, and the reader -- pure extraction whose output is checkable, the
-// verbatim quote must be on the page -- defaults to `sonnet` at low. Both are arguments.
+// verbatim quote must be on the page -- defaults to `haiku` at low: the owner's rule is that
+// haiku reads files, and one page per context with a quote to check is the shape that rule
+// fits. The reference's case against haiku (knowledge questions, long agentic loops) does not
+// describe a reader. `unquoted` below is the check; a run that shows it climbing sets
+// `readModel: "sonnet"`. Both models are arguments.
 //
 // Same runtime constraints as the sibling scripts: no filesystem, no Date/Math.random.
 
@@ -118,7 +122,7 @@ const MAX_PAGES = num(IN.maxPages, 60)                   // across the run, enfo
 // model, which is what the searcher wants. See the header for why.
 const SEARCH_MODEL  = IN.searchModel  || undefined
 const SEARCH_EFFORT = IN.searchEffort || 'low'
-const READ_MODEL    = IN.readModel    || 'sonnet'
+const READ_MODEL    = IN.readModel    || 'haiku'
 const READ_EFFORT   = IN.readEffort   || 'low'
 
 // ---------------------------------------------------------------- stage 1: search

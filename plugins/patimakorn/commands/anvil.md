@@ -51,10 +51,10 @@ accident* never is. So decide, every time, from this table:
 
 | Dispatch | `subagent_type` | `model` | Why |
 |---|---|---|---|
-| Phase 1 orient — locate files, trace how a flow is wired, find callers | `Explore`, via `orient.workflow.js` | `sonnet`, set by the script | Retrieval. The judgement is in reading the result, not producing it. The script passes `model: sonnet` itself, so this row is what it does rather than what you must remember. |
-| Phase 2 — read a file, a config, or the git history to settle one fact | `Explore` | `sonnet` | Retrieval. |
+| Phase 1 orient — locate files, trace how a flow is wired, find callers | `Explore`, via `orient.workflow.js` | `haiku`, set by the script | Retrieval: reading files is what haiku is for here. The judgement is in reading the result, not producing it. The script passes `model: haiku` itself, so this row is what it does rather than what you must remember; `unsourced` in its return is the check, and `model: "sonnet"` in its args is the step up if that count is not zero. |
+| Phase 2 — read a file, a config, or the git history to settle one fact | `Explore` | `haiku` | Retrieval. Reading files is haiku's job. |
 | Phase 2 — summarize sources already identified | `general-purpose` | `sonnet` | Summarization of text someone else chose. |
-| Phase 2 — research outside the repository: a spec, a vendor's number, a market figure, whether a standard still applies | `general-purpose` ×2 stages, via `research.workflow.js` | searcher: *inherit*, `effort: low`; reader: `sonnet`, `effort: low` — both set by the script | Two stages so no page is ever re-read: a searcher per question that returns URLs and never holds a page body, then a reader per URL that holds exactly one page and ends. The searcher judges which sources are worth reading, on a tiny context, so it keeps the frontier model at low effort — Anthropic's cost reference measured a frontier model at `low` beating the mid tier on deep research at ~10% less per task, and research effort curves nearly flat. The reader extracts with a verbatim quote, a checkable output, so `sonnet` at low. Measured 2026-09-29 before this: five single-agent sweeps at inherited opus, 116–122 fetches each with zero repeats, 83% of the run's cost, 58% of it re-reading pages already fetched. Breadth was real; the cost was the re-reading. |
+| Phase 2 — research outside the repository: a spec, a vendor's number, a market figure, whether a standard still applies | `general-purpose` ×2 stages, via `research.workflow.js` | searcher: *inherit*, `effort: low`; reader: `haiku`, `effort: low` — both set by the script | Two stages so no page is ever re-read: a searcher per question that returns URLs and never holds a page body, then a reader per URL that holds exactly one page and ends. The searcher judges which sources are worth reading, on a tiny context, so it keeps the frontier model at low effort — Anthropic's cost reference measured a frontier model at `low` beating the mid tier on deep research at ~10% less per task, and research effort curves nearly flat. The reader extracts with a verbatim quote, a checkable output, from one page — reading, which is haiku's job — so `haiku` at low; `unquoted` in the return is the check, `readModel: "sonnet"` the step up. Measured 2026-09-29 before this: five single-agent sweeps at inherited opus, 116–122 fetches each with zero repeats, 83% of the run's cost, 58% of it re-reading pages already fetched. Breadth was real; the cost was the re-reading. |
 | Phase 5 — execute one task | `patimakorn:executor` | *omit* | The agent's own frontmatter pins `model: sonnet`; passing `model` here would override it. |
 | Phase 6 — review finders | whatever the `code-review` skill dispatches | *omit* | Cross-file, domain-specific defect hunting. |
 
@@ -63,7 +63,7 @@ prior run the review finders returned fifteen confirmed findings per round — a
 mm-per-pixel on rectangular matrices, a sampling window that dropped the centre slice, dataloader
 workers sharing one random stream — for under 8% of the run's cost. In the same run, three
 summarization agents that inherited the session model cost more than all eleven review finders
-combined. The saving lives in the `sonnet` rows; the capability lives in the *omit* rows.
+combined. The saving lives in the `haiku` and `sonnet` rows; the capability lives in the *omit* rows.
 
 ### Rule 2 — delegation is the default, doing it yourself is the exception
 
@@ -147,7 +147,7 @@ Workflow({
 working directory, and reading the file first does not lift that (see phase 5 for the measured
 error). The run result names a `scriptPath` inside the session directory; that one is reusable.
 
-The script dispatches one `Explore` agent per question at `model: sonnet` (Rule 1's row for this
+The script dispatches one `Explore` agent per question at `model: haiku` (Rule 1's row for this
 phase, now written into the script rather than left to you), all concurrent, each returning
 `files` (path and why, every path verified to exist), `summary`, and `unknowns`. It throws on an
 empty `questions` list rather than dispatching nothing.
@@ -256,7 +256,7 @@ Rules:
 
     Two stages, so no page is ever read twice. A **searcher** per question — the session's model at
     `effort: low`, searching only, never fetching — returns up to the tier's URLs. Then a **reader**
-    per distinct URL — `sonnet` at `effort: low`, one page per context — returns `findings` each
+    per distinct URL — `haiku` at `effort: low`, one page per context — returns `findings` each
     with a verbatim `quote`. A URL two questions surfaced is read once. The return carries
     `findings` (claim, quote, `source_url`, which questions), `pages`, `noSources` (questions whose
     searcher found nothing), `unreadable`, `unquoted` (findings whose reader gave no quote), and

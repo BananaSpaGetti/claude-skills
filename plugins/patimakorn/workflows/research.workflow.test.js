@@ -65,24 +65,24 @@ const starts = (trace, kind) => trace.filter(t => t.ev === 'start' && t.kind ===
     check('findings carry source_url and questions', out.findings.length === 2 && out.findings.every(f => f.source_url && f.questions.length === 1));
   }
 
-  console.log('--- 2. searcher inherits the session model at low effort; reader is sonnet at low');
+  console.log('--- 2. searcher inherits the session model at low effort; reader is haiku at low');
   {
     const { trace } = await run({ request: 'r', questions: ['a'] });
     const s = starts(trace, 'search')[0].opts, r = starts(trace, 'read')[0].opts;
     check('searcher: no model key (inherits)', !('model' in s), JSON.stringify(s.model));
     check('searcher effort low', s.effort === 'low', s.effort);
-    check('reader model sonnet', r.model === 'sonnet', r.model);
+    check('reader model haiku', r.model === 'haiku', r.model);
     check('reader effort low', r.effort === 'low', r.effort);
     check('both general-purpose with a schema', s.agentType === 'general-purpose' && r.agentType === 'general-purpose' && s.schema && r.schema);
   }
 
   console.log('--- 3. models and effort are overridable per stage');
   {
-    const { trace, out } = await run({ request: 'r', questions: ['a'], searchModel: 'sonnet', searchEffort: 'medium', readModel: 'haiku', readEffort: 'medium' });
+    const { trace, out } = await run({ request: 'r', questions: ['a'], searchModel: 'sonnet', searchEffort: 'medium', readModel: 'opus', readEffort: 'medium' });
     const s = starts(trace, 'search')[0].opts, r = starts(trace, 'read')[0].opts;
     check('search override', s.model === 'sonnet' && s.effort === 'medium');
-    check('read override', r.model === 'haiku' && r.effort === 'medium');
-    check('models echoed in return', out.models.search === 'sonnet' && out.models.read === 'haiku');
+    check('read override', r.model === 'opus' && r.effort === 'medium');
+    check('models echoed in return', out.models.search === 'sonnet' && out.models.read === 'opus');
   }
 
   console.log('--- 4. complexity tiers set the budgets in the prompt; default is comparison');

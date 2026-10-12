@@ -131,8 +131,8 @@ of quadratic in fetches. Each question carries a `complexity` — `simple`, `com
 failure mode they name is "overinvestment in straightforward queries". The searcher keeps the
 session's model at `effort: low` (Anthropic's cost reference measured a frontier model at low
 beating the mid tier on deep research at ~10% less per task, and near-flat effort curves for
-research); the reader is `sonnet` at low, because its output is checkable — the quote must be on
-the page. The return counts `searchesUsed`, `urlsFound`, `pagesRead`, `noSources`, `unreadable`,
+research); the reader is `haiku` at low — reading one page is what haiku is for, and its output
+is checkable: the quote must be on the page. The return counts `searchesUsed`, `urlsFound`, `pagesRead`, `noSources`, `unreadable`,
 `unquoted` and `overBudget`, and phase 7 prints them all.
 
 Sources: [How we built our multi-agent research system](https://www.anthropic.com/engineering/multi-agent-research-system)
@@ -307,7 +307,7 @@ contradicts a box here is the stale one.**
       `Explore` agents against "the floor is one dispatch" — the same instruction-does-not-bind
       defect phase 5 had, on the other side of the interview. On 2026-09-16 orientation moved into
       `plugins/patimakorn/workflows/orient.workflow.js`: the main loop composes the questions, the
-      script dispatches one `Explore` agent per question at `sonnet` and refuses an empty list, and
+      script dispatches one `Explore` agent per question at `sonnet` (`haiku` since 0.21.0) and refuses an empty list, and
       its `files` is the only thing the plan's `## Context` may be written from. The first real plan
       through it, `idea-readiness-review` in a separate repository on the same day, carries
       `orient: wf_c27f7b3d-fbb, 6 dispatched` in its frontmatter and "all 6 answered" in its Log.
@@ -356,7 +356,18 @@ contradicts a box here is the stale one.**
       itself is a low one) and a closing pass at `xhigh` reports what the `medium` rounds missed —
       zero, or a count that sends the fixing rounds back up. `executorModel: "haiku"` is a knob
       for the same experiment one tier down, and the retry rate is its verdict too; Anthropic's
-      reference puts haiku at 63% on knowledge questions against 92%, so it is a knob, not a default.
+      reference puts haiku at 63% on knowledge questions against 92%, so for executors it is a
+      knob, not a default.
+- [ ] **Haiku reads; nothing has measured it reading yet.** Added 2026-10-12, 0.21.0. The two
+      roles that only read — the phase 1 `Explore` agent (one question, files that must exist)
+      and the phase 2 reader (one page, a quote that must be on it) — now default to `haiku`,
+      by the owner's rule that haiku is for reading files. The reference's case against haiku
+      (knowledge questions, long agentic loops) describes neither role, but that is an argument,
+      not a number. The checks already exist: `unsourced` from orient and `unquoted` from
+      research. The sonnet baseline is one orient run, 5 dispatched 0 unsourced (2026-09-29);
+      the reader has no baseline at any model. Ticks when a phase 7 report shows both counts at
+      haiku — zero keeps the default, anything else sets `model` / `readModel` back to `sonnet`
+      and records which questions haiku missed.
 - [x] The script version ran its interview, plan, execute and review phases on this repository on
       2026-09-12, under plan `ready-for-public`. **The split, which is the number that decides
       whether it fixed the prose version's defect: of the 4 tasks that have executed, 3 went to the script

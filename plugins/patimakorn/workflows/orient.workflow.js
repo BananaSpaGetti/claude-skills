@@ -96,10 +96,13 @@ log('dispatching ' + QUESTIONS.length + ' question(s), one Explore agent each')
 
 // Every question is independent, so they all go out at once. The runtime caps how many
 // run at a time and queues the rest.
-// `sonnet` by default -- retrieval, and the one row of Rule 1 that was measured cheap. `model`
-// and `effort` are arguments so a cheaper tier is one line to try; the `unsourced` count below
-// is what says whether it is paying for itself.
-const MODEL  = IN.model  || 'sonnet'
+// `haiku` by default. This is the owner's rule -- haiku is for reading files -- and the role
+// fits what Anthropic's cost reference says haiku is bad at (knowledge questions: 63% against
+// 92%; long agentic loops) by being neither: one question, answered from files that must exist,
+// on a short context. The check is `unsourced` below, plus the `files` paths the main loop can
+// open. `model` and `effort` are arguments; a run that shows unsourced answers at haiku sets
+// `model: "sonnet"`, and the two counts side by side are the measurement.
+const MODEL  = IN.model  || 'haiku'
 const EFFORT = IN.effort || 'low'
 
 const answers = await parallel(QUESTIONS.map((q, i) => () =>

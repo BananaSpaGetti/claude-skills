@@ -45,20 +45,10 @@ that, so it is asked rather than inferred. It will also stop and ask when someth
 make for you: whether to branch off `main`, what to do about a failed task, how to pick up a
 plan whose tree is dirty. Everywhere else it runs without checking in.
 
-```mermaid
-flowchart LR
-    P[Preflight] --> O[Orient<br/>subagents read the repo]
-    O --> I{{Interview<br/>you answer}}
-    I --> PL[Plan<br/>.plans/slug.md]
-    PL --> A{{Approve<br/>you sign off}}
-    A --> E[Execute<br/>script dispatches<br/>one executor per task]
-    E --> R[Review<br/>up to 3 fix rounds]
-    R --> C{{Close out<br/>is this what you asked for?}}
-    E -. "fails verify" .-> E2[Retry once<br/>at high effort]
-    E2 -.-> R
-```
-
-The hexagons are the three places it stops and waits for you.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/anvil-flow-dark.png">
+  <img alt="anvil's eight phases; interview, approve and close out wait for you" src="assets/anvil-flow-light.png">
+</picture>
 
 - **Interview as a design tree.** The frontier is every decision whose prerequisites are settled;
   it asks that whole frontier in one numbered round, each question with a recommended answer, then
